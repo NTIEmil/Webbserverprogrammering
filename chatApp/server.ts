@@ -3,79 +3,47 @@ const bodyParser = require("body-parser");
 const app = express();
 const http = require("http").Server(app);
 const io = require("socket.io")(http);
+const mongoose = require("mongoose");
 
-// 402 Payment Required
+const dbUrl =
+  "mongodb+srv://emil:J6j7B3W8MpEJ8ucX@cluster0.e1wd3iz.mongodb.net/?retryWrites=true&w=majority";
 
-// type chatMessage = {
-//   name: string;
-//   message: string;
-// };
+try {
+  mongoose.connect(dbUrl);
+  console.log("Ansluten till MongoDB");
+} catch {
+  console.log(Error);
+}
+
+let Message = mongoose.model("Message", {
+  name: String,
+  message: String,
+});
 
 app.use(express.static("./dist"));
 app.use(bodyParser.urlencoded({ extended: false }));
 
-const fs = require("fs");
-
-// @ts-ignore
-let messages;
-
-// @ts-ignore
-// let messages: [any];
-
-// @ts-ignore
-fs.readFile("./messages.json", "utf8", (error, json) => {
-  if (error) {
-    console.log(error);
-    app.res.sendStatus(500);
-    return;
-  }
-  try {
-    messages = JSON.parse(json);
-  } catch (error) {
-    console.log(error);
-    app.res.sendStatus(500);
-  }
-
-  app.res.sendStatus(200);
-});
-
-// let messages = [
-//   { name: "Mathias", message: "Hej" },
-//   { name: "Henrik", message: "Hellå" },
-// ];
-
-// @ts-ignore
 app.get("/messages", (req, res) => {
-  res.send(messages);
+  Message.find().then((item) => {
+    res.send(item);
+  });
 });
 
-// @ts-ignore
 app.post("/messages", (req, res) => {
-  try {
-    messages.push(req.body);
-    io.emit("message", req.body);
+  let message = new Message(req.body);
 
-    // @ts-ignore
-    fs.writeFile(
-      "./messages.json",
-      JSON.stringify(messages),
-      "utf8",
-      (error) => {
-        if (error) {
-          console.log(error);
-          res.sendStatus(500);
-        } else {
-          console.log("writeFile complete");
-          res.sendStatus(200);
-        }
-      }
-    );
-  } catch {
-    res.sendStatus(400);
-  }
+  message
+    .save()
+
+    .then((item) => {
+      io.emit("message", req.body);
+    })
+    .catch((err) => {
+      res.status(500).send("unable to save to database");
+      console.log(err);
+    });
 });
 
-// @ts-ignore
 io.on("connection", (socket) => {
   console.log("Användare ansluten");
 });
