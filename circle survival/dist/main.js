@@ -96,7 +96,7 @@ let pressedKeys = [];
 let openUpgradeMenu = false;
 let paused = false;
 // Topplistan
-let highScoreList;
+let highScoreList = [];
 // Definieringen av övriga variabler
 let animationID;
 let animationIntervalID;
@@ -104,6 +104,33 @@ let score;
 let enemySpawnDelay;
 let experiencePoints;
 let experiencePerLevel;
+// Server-kommunikation
+// @ts-ignore
+const socket = io();
+// När sidan har laddats in
+$(() => {
+    getHighScores();
+});
+// När nytt slutpoäng skciaks från servern
+socket.on("highscore", (highScore) => {
+    addHighScore(highScore);
+    updateHighscores();
+});
+// Lägger till slutpoängen i topplistan och updaterar den
+function addHighScore(highScore) {
+    highScoreList.push(highScore);
+}
+// Lägger till alla slutpoäng från databasen
+function getHighScores() {
+    $.get("http://localhost:3000/scores", (data) => {
+        data.forEach(addHighScore);
+        updateHighscores();
+    });
+}
+// Skickat slutpoängen till servern
+function postHighscore(highScore) {
+    $.post("http://localhost:3000/scores", highScore);
+}
 // Nollställning i början av varje spel
 function init() {
     // Spelaren står still i mitten av skrämen
@@ -213,15 +240,8 @@ function endGame() {
     // Lägger till spelaren på topplsitan
     // @ts-ignore
     let highScore = { name: aliasInput.value, score: score };
-    highScoreList.push(highScore);
-    // Sorterar topplsitan
-    highScoreList.sort((a, b) => {
-        return b.score - a.score;
-    });
-    // Sparar ner topplsitan lokalt
-    localStorage.setItem("highScores", JSON.stringify(highScoreList));
-    // Uppdaterar topplsitan på skärmen
-    updateHighscores();
+    // Sparar ner topplsitan i databasen
+    postHighscore(highScore);
 }
 // Kollar om en fiende träffar spelaren
 function enemyHittingPlayer(enemy, enemyIndex) {
@@ -308,6 +328,7 @@ function updateExperienceBar() {
 }
 // Animerar spelet (fps) gånger per sekund
 function startAnimation() {
+    // @ts-ignore
     animationIntervalID = setInterval(() => {
         animationID = requestAnimationFrame(animate);
     }, 1000 / fps);
@@ -420,15 +441,30 @@ function updateHighscores() {
     while (scoreboardTable.hasChildNodes()) {
         scoreboardTable.removeChild(scoreboardTable.lastChild);
     }
+    // Sorterar topplsitan
+    try {
+        highScoreList.sort((a, b) => {
+            return b.score - a.score;
+        });
+    }
+    catch { }
     // Tar fram top 5
     for (let i = 0; i < 5; i++) {
         // Om det finns tillräcklgit många i topplistan
-        if (highScoreList.length > i) {
-            // Lägger till dem
-            highScore = highScoreList[i];
+        try {
+            if (highScoreList.length > i) {
+                // Lägger till dem
+                highScore = highScoreList[i];
+            }
+            else {
+                // Lägger till en tom plats
+                highScore = {
+                    name: "-",
+                    score: 0,
+                };
+            }
         }
-        else {
-            // Lägger till en tom plats
+        catch {
             highScore = {
                 name: "-",
                 score: 0,
@@ -474,11 +510,3 @@ startGameButton.addEventListener("click", () => {
         });
     }
 });
-// Letar efter en lokalt sparad topplsita
-highScoreList = JSON.parse(localStorage.getItem("highScores"));
-// Gör det till en tom lsita om den itne hittas
-if (highScoreList == null) {
-    highScoreList = [];
-}
-// Uppdaterar topplsitan på skärmen
-updateHighscores();
