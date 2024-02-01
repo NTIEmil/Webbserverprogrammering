@@ -8,6 +8,7 @@ const mongoose = require("mongoose");
 const dbUrl =
   "mongodb+srv://emilwinroth:cu92LgKFTM6frj8i@cluster0.q7eceeq.mongodb.net/?retryWrites=true&w=majority";
 
+// Kontaktar databasen
 try {
   mongoose.connect(dbUrl);
   console.log("Ansluten till MongoDB");
@@ -23,12 +24,14 @@ let Highscore = mongoose.model("Highscore", {
 app.use(express.static("./dist"));
 app.use(bodyParser.urlencoded({ extended: false }));
 
+// Skickar alla slutpoäng från databasen till hemsidan
 app.get("/scores", (req, res) => {
   Highscore.find().then((item) => {
     res.send(item);
   });
 });
 
+// Tar emot nya slutpoäng och skickar dem både till databasen och till andra användare
 app.post("/scores", (req, res) => {
   let highscore = new Highscore(req.body);
 
@@ -44,10 +47,7 @@ app.post("/scores", (req, res) => {
     });
 });
 
+// Kollar när en användare har anslutit
 io.on("connection", (socket) => {
   console.log("Användare ansluten");
-});
-
-http.listen(3000, () => {
-  console.log("Servern körs, besök http://localhost:3000");
 });
