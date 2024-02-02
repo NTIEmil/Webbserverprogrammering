@@ -51,3 +51,8 @@ app.post("/scores", (req, res) => {
 io.on("connection", (socket) => {
   console.log("Användare ansluten");
 });
+
+// När servern har startats upp
+http.listen(3000, () => {
+  console.log("Servern körs, besök http://localhost:3000");
+});
