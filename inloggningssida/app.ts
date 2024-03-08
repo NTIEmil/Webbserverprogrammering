@@ -20,6 +20,22 @@ const db = mysql.createConnection({
   database: process.env.DATABASE,
 });
 
+const checkUserExists = async (column, value) => {
+  return new Promise((resolve, reject) => {
+    db.query(
+      `SELECT * FROM users WHERE ${column} = ?`,
+      [value],
+      (error, result) => {
+        if (error) {
+          reject(error);
+        }
+
+        resolve(result.length > 0);
+      }
+    );
+  });
+};
+
 app.use(express.urlencoded({ extended: "false" }));
 app.use(express.json());
 
@@ -47,57 +63,47 @@ app.get("/login", (req, res) => {
 });
 
 // Tar emot poster från registeringsformuläret
-app.post("/auth/register", (req, res) => {
+app.post("/auth/register", async (req, res) => {
   const { name, email, password, password_confirm } = req.body;
+  let databaseDenial = false;
 
   if (name == "" || email == "" || password == "" || password_confirm == "") {
     return res.render("register", {
       message: "Fyll i alla fält",
     });
-  }
-
-  db.query("SELECT name FROM users WHERE name = ?", [name], (error, result) => {
-    if (error) {
-      console.log(error);
-    }
-    if (result.length > 0) {
-      console.log("object");
-    }
-  });
-
-  if (db.query("SELECT email FROM users WHERE email = ?", [email])) {
+  } else if (await checkUserExists("name", name)) {
+    return res.render("register", {
+      message: "Användarnamnet är upptaget",
+    });
+  } else if (await checkUserExists("email", email)) {
     return res.render("register", {
       message: "E-postadressen är upptagen",
     });
-  }
-
-  if (email_Regex.test(email) == false) {
+  } else if (email_Regex.test(email) == false) {
     return res.render("register", {
       message: "Ogiltig e-postadress",
     });
-  }
-
-  if (password !== password_confirm) {
+  } else if (password !== password_confirm) {
     return res.render("register", {
       message: "Lösenorden matchar ej",
     });
-  }
-
-  bcrypt.hash(password, 10, function (err, hash) {
-    db.query(
-      "INSERT INTO users SET?",
-      { name: name, email: email, password: hash },
-      (err, result) => {
-        if (err) {
-          console.log(err);
-        } else {
-          return res.render("register", {
-            message: "Användare registrerad",
-          });
+  } else {
+    bcrypt.hash(password, 10, function (err, hash) {
+      db.query(
+        "INSERT INTO users SET?",
+        { name: name, email: email, password: hash },
+        (err, result) => {
+          if (err) {
+            console.log(err);
+          } else {
+            return res.render("register", {
+              message: "Användare registrerad",
+            });
+          }
         }
-      }
-    );
-  });
+      );
+    });
+  }
 });
 
 // Tar emot poster från loginsidan
