@@ -67,11 +67,7 @@ app.post("/auth/register", async (req, res) => {
   const { name, email, password, password_confirm } = req.body;
   let databaseDenial = false;
 
-  if (name == "" || email == "" || password == "" || password_confirm == "") {
-    return res.render("register", {
-      message: "Fyll i alla fält",
-    });
-  } else if (await checkUserExists("name", name)) {
+  if (await checkUserExists("name", name)) {
     return res.render("register", {
       message: "Användarnamnet är upptaget",
     });
@@ -120,7 +116,7 @@ app.post("/auth/login", (req, res) => {
       // Om == 0 så finns inte användaren
       if (result.length == 0) {
         return res.render("login", {
-          message: "Användaren finns ej",
+          message: "Fel användarnamn eller lösenord",
         });
       } else {
         // Vi kollar om lösenordet som är angivet matchar det i databasen
@@ -131,7 +127,7 @@ app.post("/auth/login", (req, res) => {
             });
           } else {
             return res.render("login", {
-              message: "Fel lösenord",
+              message: "Fel användarnamn eller lösenord",
             });
           }
         });
