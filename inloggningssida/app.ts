@@ -8,7 +8,13 @@ const app = express();
 app.set("view engine", "hbs");
 dotenv.config({ path: "./.env" });
 
-const email_Regex = new RegExp(/[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z0-9]+/);
+const email_Regex = new RegExp(
+  /^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i
+);
+
+const password_Regex = new RegExp(
+  /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/
+);
 
 const publicDir = path.join(__dirname, "./webbsidan");
 
@@ -78,6 +84,11 @@ app.post("/auth/register", async (req, res) => {
   } else if (email_Regex.test(email) == false) {
     return res.render("register", {
       message: "Ogiltig e-postadress",
+    });
+  } else if (password_Regex.test(password) == false) {
+    return res.render("register", {
+      message:
+        "Lösenordet måste ha minst 8 tecken, en stor bokstav, en liten bokstav, ett nummer och ett specialtecken.",
     });
   } else if (password !== password_confirm) {
     return res.render("register", {

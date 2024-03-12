@@ -78,7 +78,9 @@
         let password = document.getElementById("password-reg");
         let passwordConfirm = document.getElementById("password-conf-reg");
 
-        const email_Regex = new RegExp(/[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z0-9]+/);
+        const email_Regex = new RegExp(/^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i);
+
+        const password_Regex = new RegExp(/^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/);
 
         let messageElement = document.querySelector(".alert-danger");
         
@@ -90,6 +92,8 @@
                 messageElement.textContent = "Fyll i alla fält";
             } else if (email_Regex.test(email) == false) {
                 messageElement.textContent = "Ogiltig e-post";
+            } else if (password.test(password) == false) {
+                messageElement.textContent = "Lösenordet måste ha minst 8 tecken, en stor bokstav, en liten bokstav, ett nummer och ett specialtecken.";
             } else if (password.value != passwordConfirm.value) {
                 messageElement.textContent = "Lösenorden matchar ej";
             } else {
