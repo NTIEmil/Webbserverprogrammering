@@ -69,36 +69,46 @@
         </div>
       </div>
     </div>
+
+    {{!-- Meddelandet finns nu oavsett om ett meddelande skcikas från servern eler ej
+    eftersom webbläsaren också behöver kunna skcika meddelanden --}}
     <h4 class="alert alert-danger mt-4" id="message">{{message}}</h4>
 
     <script>
+      /* När hemsidan har laddats in */
       window.onload = function() {
+        /* Hämtar elementen */
         let name = document.getElementById("name-reg");
         let email = document.getElementById("email-reg");
         let password = document.getElementById("password-reg");
         let passwordConfirm = document.getElementById("password-conf-reg");
-
-        const email_Regex = new RegExp(/^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i);
-
-        const password_Regex = new RegExp(/^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/);
-
         let messageElement = document.querySelector(".alert-danger");
+
+        // Regex för att validera e-postadresser och lösenord
+        const email_Regex = new RegExp(/^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i);
+        const password_Regex = new RegExp(/^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/);
         
+        /* Döljer varnignsmeddelandet om det är tomt */
         if (messageElement.textContent == "") {
           messageElement.style.display = "none";
         }
+
+        /* Kollar formuläret när anvädneren vill skicka in det */
         document.getElementById("submit-button").addEventListener("click", function(event) {
+            /* Kollar om alla fält är ifyllda */
             if (name.value == "" || email.value == "" || password.value =="" ||passwordConfirm.value =="") {
                 messageElement.textContent = "Fyll i alla fält";
+            // Kollar om e-postadressen är i korrekt format
             } else if (email_Regex.test(email) == false) {
                 messageElement.textContent = "Ogiltig e-post";
+            // Kollar om lösenordet är tillräckligt säkert
             } else if (password.test(password) == false) {
                 messageElement.textContent = "Lösenordet måste ha minst 8 tecken, en stor bokstav, en liten bokstav, ett nummer och ett specialtecken.";
+            // Kollar om lösenorden matchar
             } else if (password.value != passwordConfirm.value) {
                 messageElement.textContent = "Lösenorden matchar ej";
-            } else {
-                messageElement.style.display = "none";
             }
+            // Om något är fel skickas inte formuläret iväg och ett felmeddelande visas
             if (messageElement.textContent != "") {
                 event.preventDefault();
                 messageElement.style.display = "block";

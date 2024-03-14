@@ -55,20 +55,26 @@
       </div>
     </div>
 
+    {{!-- Meddelandet finns nu oavsett om ett meddelande skcikas från servern eler ej
+    eftersom webbläsaren också behöver kunna skcika meddelanden --}}
     <h4 class="alert alert-danger mt-4" id="message">{{message}}</h4>
 
     <script>
+      /* När hemsidan har laddats in */
       window.onload = function() {
+        /* Hämtar elementen */
         let name = document.getElementById("name-lgn");
         let password = document.getElementById("password-lgn");
-        
         let messageElement = document.querySelector(".alert-danger");
         
+        /* Döljer varnignsmeddelandet om det är tomt */
         if (messageElement.textContent == "") {
           messageElement.style.display = "none";
         }
+
+        /* Om användaren försöker skicka formuläret utan att fylla i alla fält så skciaks det
+        inte iväg och hen får ett felmeddelande*/
         document.getElementById("submit-button").addEventListener("click", function(event) {
-            
             if (name.value == "" || password.value =="") {
                 event.preventDefault();
                 messageElement.textContent = "Fyll i alla fält";
