@@ -15,8 +15,8 @@ type upgrade = {
 
 // Ett spelresultat
 type highScore = {
-  name: string;
-  score: number;
+  Name: string;
+  Score: number;
 };
 
 // Förslyttande objekt

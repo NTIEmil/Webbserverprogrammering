@@ -157,13 +157,17 @@ function addHighScore(highScore: highScore) {
 function getHighScores() {
   $.get("http://localhost:3000/scores", (data) => {
     data.forEach(addHighScore);
+    console.log(highScoreList);
     updateHighscores();
   });
 }
 
 // Skickat slutpoängen till servern
 function postHighscore(highScore: highScore) {
+  console.log(highScore);
   $.post("http://localhost:3000/scores", highScore);
+  highScoreList.push(highScore);
+  updateHighscores();
 }
 
 // Nollställning i början av varje spel
@@ -293,7 +297,7 @@ function endGame() {
 
   // Lägger till spelaren på topplsitan
   // @ts-ignore
-  let highScore: highScore = { name: aliasInput.value, score: score };
+  let highScore: highScore = { Name: aliasInput.value, Score: score };
 
   // Sparar ner topplsitan i databasen
   postHighscore(highScore);
@@ -562,7 +566,7 @@ function updateHighscores() {
   // Sorterar topplsitan
   try {
     highScoreList.sort((a, b) => {
-      return b.score - a.score;
+      return b.Score - a.Score;
     });
   } catch {}
 
@@ -576,21 +580,21 @@ function updateHighscores() {
       } else {
         // Lägger till en tom plats
         highScore = {
-          name: "-",
-          score: 0,
+          Name: "-",
+          Score: 0,
         };
       }
     } catch {
       highScore = {
-        name: "-",
-        score: 0,
+        Name: "-",
+        Score: 0,
       };
     }
 
     // Skapar en tabell av topplistan
     let tableRow = document.createElement("tr");
-    newElement(tableRow, "th", highScore.name);
-    newElement(tableRow, "th", highScore.score.toString());
+    newElement(tableRow, "th", highScore.Name);
+    newElement(tableRow, "th", highScore.Score.toString());
 
     // Lägger till topplsitan på skärmen
     scoreboardTable.appendChild(tableRow);
