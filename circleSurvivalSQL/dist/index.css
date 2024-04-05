@@ -1,0 +1,199 @@
+/* ########################### */
+/* Generellt för hela hemsidan */
+/* ########################### */
+
+/* Hemsidans kropp */
+body {
+  margin: 0;
+  overflow: hidden;
+  background-color: black;
+}
+
+/* När man hovrar över en knapp */
+button:hover {
+  cursor: pointer;
+}
+
+/* ################ */
+/* Specifika elemnt */
+/* ################ */
+
+/* Statistiken i övre vänstra hörnet */
+.stat-display {
+  position: fixed;
+  color: white;
+  margin-left: 1rem;
+  margin-top: 1px;
+  user-select: none;
+  font-size: 2rem;
+  display: none;
+}
+
+/* Centrerar objektet på skärmen */
+.center-div {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  flex-direction: column;
+}
+
+/* Pausskärmen */
+.pause-display {
+  display: none;
+  color: white;
+  margin-top: 5rem;
+}
+
+/* ######################### */
+/* Rutor i mitten av skärmen */
+/* ######################### */
+.center-display {
+  background-color: white;
+  width: 24rem;
+  padding: 1rem;
+  pointer-events: visible;
+}
+
+.center-display h1 {
+  font-size: 3rem;
+  line-height: 0;
+}
+
+.center-display p {
+  font-size: 1.3rem;
+}
+
+.center-display input {
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.center-display button {
+  background-color: rgb(59 130 246);
+  color: white;
+  width: 100%;
+  border-radius: 9999px;
+  height: 3rem;
+  font-size: 1.5rem;
+  -webkit-text-stroke: 0.04rem black;
+}
+
+/* ################## */
+/* Erfarenhetsvisaren */
+/* ################## */
+
+/* Dess div-tag */
+.progress-div {
+  color: white;
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  margin-top: 1rem;
+  user-select: none;
+  display: none;
+}
+
+/* Procentmätaren */
+.progress-div progress {
+  width: 34vw;
+  height: 1.5rem;
+}
+
+/* ################## */
+/* Uppgraderingsmenyn */
+/* ################## */
+
+/* Hela uppgraderingsmenyn */
+.upgrade-display {
+  display: none;
+}
+
+/* Förälderna till uppgraderings div-arna */
+.upgrade-options {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+
+/* Uppgraderingarnas div-ar */
+.upgrade-options div {
+  margin: 1rem;
+  min-width: 6.5rem;
+}
+
+/* ########################### */
+/* Rutor vido sidan av skrämen */
+/* ########################### */
+
+/* Deras yttre div */
+.side-div {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  flex-direction: column;
+  top: 50%;
+}
+
+/* Innehållet i div-en */
+.side-display {
+  background-color: white;
+  padding: 1rem;
+  width: 12rem;
+  justify-content: center;
+}
+
+/* Bredare sidoruta */
+.wider-side-display {
+  width: 18rem;
+}
+
+/* Deras innre div */
+.side-display div {
+  display: inline-block;
+  width: 100%;
+}
+
+/* På högra sidan av skrämen */
+.side-right {
+  right: 20vw;
+  transform: translate(50%, -50%);
+}
+
+/* På vänstra sidan av skärmen */
+.side-left {
+  left: 20vw;
+  transform: translate(-50%, -50%);
+}
+
+/* ######## */
+/* Tabeller */
+/* ######## */
+
+/* Alla tabeller */
+.table {
+  border: 1px solid;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+/* Element i tabeller */
+.table tr {
+  border-bottom: 1px solid black;
+}
+
+/* Liten text i tabeller */
+.table-text-small tr {
+  font-size: 1.5rem;
+}
+
+/* Stor text i tabeller */
+.table-text-large tr {
+  font-size: 1.5rem;
+}
