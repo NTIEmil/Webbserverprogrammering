@@ -39,7 +39,7 @@ app.use(express.urlencoded({ extended: "false" }));
 app.use(express.json());
 
 app.get("/scores", (req, res) => {
-  db.query("SELECT * FROM Highscore", (err, rows) => {
+  db.query("SELECT * FROM highscores", (err, rows) => {
     if (err) throw err;
     console.log(rows);
     res.send(rows);
@@ -49,7 +49,7 @@ app.get("/scores", (req, res) => {
 app.post("/scores", (req, res) => {
   const highscore = { Name: req.body.Name, Score: req.body.Score };
   console.log(highscore);
-  db.query("INSERT INTO Highscore SET ?", highscore, (err, res) => {
+  db.query("INSERT INTO highscores SET ?", highscore, (err, res) => {
     if (err) throw err;
     console.log("Senaste ID:", res.insertId);
   });
