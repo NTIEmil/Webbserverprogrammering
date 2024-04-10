@@ -5,27 +5,54 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Register</title>
     <link rel="stylesheet" href="loggin.css" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT"
+      crossorigin="anonymous"
+    />
   </head>
   <body>
     <div class="center-div">
       <h1>Register</h1>
-      <form action="register.php" method="post">
-        <input type="text" name="username" placeholder="Username" required />
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          required
-        />
-        <input
-          type="password"
-          name="passwordConfirm"
-          placeholder="Confirm Password"
-          required
-        />
-        <button type="submit">Register</button>
+      <form action="/auth/register" method="POST">
+        <div class="mb-3">
+          <label for="name-reg" class="form-label">Namn:</label>
+          <input type="text" class="form-control" id="name-reg" name="name" />
+        </div>
+        <div class="mb-3">
+          <label for="email-reg" class="form-label">E-post:</label>
+          <input type="text" class="form-control" id="email-reg" name="email" />
+        </div>
+        <div class="mb-3">
+          <label for="password-reg" class="form-label">Lösenord:</label>
+          <input
+            type="password"
+            class="form-control"
+            id="password-reg"
+            name="password"
+          />
+        </div>
+        <div class="mb-3">
+          <label for="password-conf-reg" class="form-label"
+            >Bekräfta lösenord:</label
+          >
+          <input
+            type="password"
+            class="form-control"
+            id="password-conf-reg"
+            name="password_confirm"
+          />
+        </div>
+
+        <button id="submit-button" type="submit" class="btn btn-primary">
+          Registrera dig
+        </button>
       </form>
-      <a href="login.php">Login</a>
+      <!-- Meddelandet finns nu oavsett om ett meddelande skcikas från servern
+      eler ej eftersom webbläsaren också behöver kunna skcika meddelanden -->
+      <h4 class="alert alert-danger mt-4" id="message"></h4>
     </div>
+    <script src="register.js"></script>
   </body>
 </html>
