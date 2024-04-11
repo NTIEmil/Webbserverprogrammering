@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login</title>
+    <link rel="stylesheet" href="login.css" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT"
+      crossorigin="anonymous"
+    />
+  </head>
+  <body>
+    <div class="center-div">
+      <h1>Login</h1>
+      <form action="/auth/login" method="POST">
+        <div class="mb-3">
+          <label for="name-lgn" class="form-label">Namn:</label>
+          <input type="text" class="form-control" id="name-lgn" name="name" />
+        </div>
+        <div class="mb-3">
+          <label for="password-lgn" class="form-label">Lösenord:</label>
+          <input
+            type="password"
+            class="form-control"
+            id="password-lgn"
+            name="password"
+          />
+        </div>
+
+        <button id="submit-button" type="submit" class="btn btn-primary">
+          Logga in
+        </button>
+      </form>
+      <!-- Meddelandet finns nu oavsett om ett meddelande skcikas från servern
+      eler ej eftersom webbläsaren också behöver kunna skcika meddelanden -->
+      <h4 class="alert alert-danger mt-4" id="message"></h4>
+    </div>
+    <script src="login.js"></script>
+  </body>
+</html>

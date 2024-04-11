@@ -3,56 +3,88 @@ const bodyParser = require("body-parser");
 const app = express();
 const http = require("http").Server(app);
 const io = require("socket.io")(http);
-const mysql = require("mysql");
-const dotenv = require("dotenv");
 const path = require("path");
+const session = require("express-session");
 
-dotenv.config({ path: "./.env" });
+const database = require("./database.ts");
 
 const publicDir = path.join(__dirname, "./dist");
 
 app.use(express.static(publicDir));
+
 app.use(
   "/socket.io",
   express.static(
-    path.join(__dirname, "node_modules", "socket.io", "client-dist")
+    path.join(__dirname, "node_modules", "socket.io", "dist")
   )
 );
 
-const db = mysql.createConnection({
-  // värden hämtas från .env
-  host: process.env.DATABASE_HOST,
-  user: process.env.DATABASE_USER,
-  password: process.env.DATABASE_PASSWORD,
-  database: process.env.DATABASE,
-});
-
-db.connect((error) => {
-  if (error) {
-    console.log(error);
-  } else {
-    console.log("Ansluten till MySQL");
-  }
-});
+app.use(
+  session({
+    secret: "your secret",
+    resave: false,
+    saveUninitialized: true,
+  })
+);
 
 app.use(express.urlencoded({ extended: "false" }));
 app.use(express.json());
 
 app.get("/scores", (req, res) => {
-  db.query("SELECT * FROM highscores", (err, rows) => {
-    if (err) throw err;
-    console.log(rows);
-    res.send(rows);
-  });
+  database.getHighscores()
+    .then((rows) => {
+      res.send(rows);
+    })
+    .catch((err) => {
+      console.log(err);
+    });
 });
 
 app.post("/scores", (req, res) => {
-  const highscore = { Name: req.body.Name, Score: req.body.Score };
-  console.log(highscore);
-  db.query("INSERT INTO highscores SET ?", highscore, (err, res) => {
-    if (err) throw err;
-    console.log("Senaste ID:", res.insertId);
-  });
+  let { name, score } = req.body;
+  database.addHighscore(name, score);
+});
+
+app.get("/register", function (req, res) {
+  res.sendFile(path.join(__dirname, "dist/register.html"));
+});
+
+app.get("/index", function (req, res) {
+  res.sendFile(path.join(__dirname, "dist/index.html"));
+});
+
+// Tar emot poster från registeringsformuläret
+// Kollar att informationen stämmer och skickar tillbaka ett meddelande med resultatet
+// Alla kollar som görs i webbläsaren gjörs även på servern ifall anvndaren skulle gå förbi webbläsarens kollar
+app.post("/auth/register", async (req, res) => {
+  let { name, email, password, password_confirm } = req.body;
+  database
+    .registerUser(name, email, password, password_confirm)
+    .then((message) => {
+      console.log(message);
+      res.redirect("/index");
+    })
+    .catch((errorMessage) => {
+      console.log(errorMessage);
+      res.redirect("/register?message=" + encodeURIComponent(errorMessage));
+    });
+});
+
+// Tar emot poster från loginsidan
+// Meddelandet som skciaks tillbaka om någonting är fel säger itne längre vad som är fel
+// Detta för att inte ge bort information om en sådan användare finns eller inte
+app.post("/auth/login", (req, res) => {
+  const { name, password } = req.body;
+  database
+    .authenticateUser(name, password)
+    .then((message) => {
+      console.log(message);
+      res.redirect("/index");
+    })
+    .catch((errorMessage) => {
+      console.log(errorMessage);
+      res.redirect("/login?message=" + encodeURIComponent(errorMessage));
+    });
 });
 
 // Kollar när en användare har anslutit
