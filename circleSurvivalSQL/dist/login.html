@@ -17,11 +17,11 @@
       <h1>Login</h1>
       <form action="/auth/login" method="POST">
         <div class="mb-3">
-          <label for="name-lgn" class="form-label">Namn:</label>
+          <label for="name-lgn" class="form-label">Username:</label>
           <input type="text" class="form-control" id="name-lgn" name="name" />
         </div>
         <div class="mb-3">
-          <label for="password-lgn" class="form-label">Lösenord:</label>
+          <label for="password-lgn" class="form-label">Password:</label>
           <input
             type="password"
             class="form-control"
@@ -31,8 +31,10 @@
         </div>
 
         <button id="submit-button" type="submit" class="btn btn-primary">
-          Logga in
+          Log in
         </button>
+
+        <p>Don't have an account? <a href="register.html">Register here.</a></p>
       </form>
       <!-- Meddelandet finns nu oavsett om ett meddelande skcikas från servern
       eler ej eftersom webbläsaren också behöver kunna skcika meddelanden -->

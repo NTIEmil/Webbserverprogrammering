@@ -112,7 +112,7 @@ function registerUser(Username, EmailAdress, Password, PasswordConfirm) {
 function authenticateUser(Username, Password) {
   return new Promise((resolve, reject) => {
     db.query(
-      "SELECT Username, Password FROM users WHERE Username = ?",
+      "SELECT Username, Password, UserID FROM users WHERE Username = ?",
       [Username],
       async (error, result) => {
         if (error) {
@@ -121,14 +121,14 @@ function authenticateUser(Username, Password) {
         }
         // If result.length == 0, the user does not exist
         if (result.length == 0) {
-          resolve("Incorrect username or password");
+          reject("Incorrect username or password");
         } else {
           // Check if the provided password matches the one in the database
           bcrypt.compare(Password, result[0].Password, function (err, result) {
             if (result) {
-              resolve("User authenticated");
+              resolve(result.UserID);
             } else {
-              resolve("Wrong username or password");
+              reject("Wrong username or password");
             }
           });
         }

@@ -10,8 +10,6 @@ const database = require("./database.ts");
 
 const publicDir = path.join(__dirname, "./dist");
 
-app.use(express.static(publicDir));
-
 app.use(
   "/socket.io",
   express.static(
@@ -45,13 +43,28 @@ app.post("/scores", (req, res) => {
   database.addHighscore(name, score);
 });
 
-app.get("/register", function (req, res) {
+app.get("/register", (req, res) => {
   res.sendFile(path.join(__dirname, "dist/register.html"));
 });
 
-app.get("/index", function (req, res) {
-  res.sendFile(path.join(__dirname, "dist/index.html"));
+app.get("/login", (req, res) => {
+  res.sendFile(path.join(__dirname, "dist/login.html"));
 });
+
+app.get("/index.html", (req, res) => {
+  res.redirect("/");
+});
+
+app.get("/", (req, res) => {
+  if (req.session.userID) {
+    res.sendFile(path.join(__dirname, "dist/index.html"));
+    console.log(req.session.userID);
+  } else {
+    res.redirect("/login");
+  }
+});
+
+app.use(express.static(publicDir));
 
 // Tar emot poster från registeringsformuläret
 // Kollar att informationen stämmer och skickar tillbaka ett meddelande med resultatet
@@ -62,7 +75,7 @@ app.post("/auth/register", async (req, res) => {
     .registerUser(name, email, password, password_confirm)
     .then((message) => {
       console.log(message);
-      res.redirect("/index");
+      res.redirect("/");
     })
     .catch((errorMessage) => {
       console.log(errorMessage);
@@ -74,12 +87,13 @@ app.post("/auth/register", async (req, res) => {
 // Meddelandet som skciaks tillbaka om någonting är fel säger itne längre vad som är fel
 // Detta för att inte ge bort information om en sådan användare finns eller inte
 app.post("/auth/login", (req, res) => {
-  const { name, password } = req.body;
+  let { name, password } = req.body;
   database
     .authenticateUser(name, password)
-    .then((message) => {
-      console.log(message);
-      res.redirect("/index");
+    .then((userID) => {
+      console.log(userID);
+      req.session.userID = userID;
+      res.redirect("/");
     })
     .catch((errorMessage) => {
       console.log(errorMessage);

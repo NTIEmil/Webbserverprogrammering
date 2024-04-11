@@ -17,15 +17,15 @@
       <h1>Register</h1>
       <form action="/auth/register" method="POST">
         <div class="mb-3">
-          <label for="name-reg" class="form-label">Namn:</label>
+          <label for="name-reg" class="form-label">Username:</label>
           <input type="text" class="form-control" id="name-reg" name="name" />
         </div>
         <div class="mb-3">
-          <label for="email-reg" class="form-label">E-post:</label>
+          <label for="email-reg" class="form-label">Email adress:</label>
           <input type="text" class="form-control" id="email-reg" name="email" />
         </div>
         <div class="mb-3">
-          <label for="password-reg" class="form-label">Lösenord:</label>
+          <label for="password-reg" class="form-label">Password:</label>
           <input
             type="password"
             class="form-control"
@@ -35,7 +35,7 @@
         </div>
         <div class="mb-3">
           <label for="password-conf-reg" class="form-label"
-            >Bekräfta lösenord:</label
+            >Confirm password:</label
           >
           <input
             type="password"
@@ -46,9 +46,10 @@
         </div>
 
         <button id="submit-button" type="submit" class="btn btn-primary">
-          Registrera dig
+          Register
         </button>
       </form>
+      <p>Already have an account? <a href="login.html">Log in here.</a></p>
       <!-- Meddelandet finns nu oavsett om ett meddelande skcikas från servern
       eler ej eftersom webbläsaren också behöver kunna skcika meddelanden -->
       <h4 class="alert alert-danger mt-4" id="message"></h4>
