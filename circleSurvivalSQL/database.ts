@@ -47,21 +47,24 @@ db.connect((error) => {
 
 function getHighscores() {
   return new Promise((resolve, reject) => {
-    db.query("SELECT * FROM highscores", (err, rows) => {
-      if (err) {
-        reject(err);
-        return;
+    db.query(
+      "SELECT highscores.Score, users.Username AS Name FROM highscores JOIN users ON highscores.UserID = users.UserID",
+      (err, rows) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        // console.log(rows + " in database.ts");
+        resolve(rows);
       }
-      // console.log(rows + " in database.ts");
-      resolve(rows);
-    });
+    );
   });
 }
 
-function addHighscore(Name, Score) {
+function addHighscore(UserID, Score) {
   db.query(
-    "INSERT INTO highscores (Name, Score) VALUES (?, ?)",
-    [Name, Score],
+    "INSERT INTO highscores (UserID, Score) VALUES (?, ?)",
+    [UserID, Score],
     (err, rows) => {
       if (err) throw err;
       // console.log(rows);
@@ -82,7 +85,9 @@ function registerUser(Username, EmailAdress, Password, PasswordConfirm) {
       reject("Invalid email address");
       // Kollar om lösenordet är tillräckligt säkert
     } else if (passwordRegex.test(Password) == false) {
-      reject("The password needs to be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number and one special character");
+      reject(
+        "The password needs to be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number and one special character"
+      );
       // Kollar om lösenorden matchar
     } else if (Password !== PasswordConfirm) {
       reject("The passwords do not match");
@@ -108,7 +113,6 @@ function registerUser(Username, EmailAdress, Password, PasswordConfirm) {
   });
 }
 
-
 function authenticateUser(Username, Password) {
   return new Promise((resolve, reject) => {
     db.query(
@@ -124,13 +128,18 @@ function authenticateUser(Username, Password) {
           reject("Incorrect username or password");
         } else {
           // Check if the provided password matches the one in the database
-          bcrypt.compare(Password, result[0].Password, function (err, result) {
-            if (result) {
-              resolve(result.UserID);
-            } else {
-              reject("Wrong username or password");
+          bcrypt.compare(
+            Password,
+            result[0].Password,
+            function (err, passwordResult) {
+              if (passwordResult) {
+                console.log("User logged in");
+                resolve(result[0].UserID);
+              } else {
+                reject("Wrong username or password");
+              }
             }
-          });
+          );
         }
       }
     );
@@ -141,5 +150,5 @@ module.exports = {
   getHighscores,
   addHighscore,
   registerUser,
-  authenticateUser
-}
+  authenticateUser,
+};

@@ -12,9 +12,7 @@ const publicDir = path.join(__dirname, "./dist");
 
 app.use(
   "/socket.io",
-  express.static(
-    path.join(__dirname, "node_modules", "socket.io", "dist")
-  )
+  express.static(path.join(__dirname, "node_modules", "socket.io", "dist"))
 );
 
 app.use(
@@ -29,8 +27,10 @@ app.use(express.urlencoded({ extended: "false" }));
 app.use(express.json());
 
 app.get("/scores", (req, res) => {
-  database.getHighscores()
+  database
+    .getHighscores()
     .then((rows) => {
+      console.log(rows);
       res.send(rows);
     })
     .catch((err) => {
@@ -39,8 +39,10 @@ app.get("/scores", (req, res) => {
 });
 
 app.post("/scores", (req, res) => {
-  let { name, score } = req.body;
-  database.addHighscore(name, score);
+  let HighScore = req.body.HighScore;
+  console.log("New highscore: " + HighScore);
+  console.log("Posting userID: " + req.session.userID);
+  database.addHighscore(req.session.userID, HighScore);
 });
 
 app.get("/register", (req, res) => {
@@ -58,7 +60,7 @@ app.get("/index.html", (req, res) => {
 app.get("/", (req, res) => {
   if (req.session.userID) {
     res.sendFile(path.join(__dirname, "dist/index.html"));
-    console.log(req.session.userID);
+    console.log("UserID connected:" + req.session.userID);
   } else {
     res.redirect("/login");
   }
@@ -91,7 +93,7 @@ app.post("/auth/login", (req, res) => {
   database
     .authenticateUser(name, password)
     .then((userID) => {
-      console.log(userID);
+      console.log("Logged in userID: " + userID);
       req.session.userID = userID;
       res.redirect("/");
     })
@@ -102,9 +104,9 @@ app.post("/auth/login", (req, res) => {
 });
 
 // Kollar när en användare har anslutit
-io.on("connection", (socket) => {
-  console.log("Användare ansluten");
-});
+// io.on("connection", (socket) => {
+//   console.log("Användare ansluten");
+// });
 
 http.listen(3000, () => {
   console.log("Servern körs, besök http://localhost:3000");

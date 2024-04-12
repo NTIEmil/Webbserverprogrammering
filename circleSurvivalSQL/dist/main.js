@@ -111,19 +111,10 @@ const socket = io();
 $(() => {
     getHighScores();
 });
-// När nytt slutpoäng skciaks från servern
-socket.on("highscore", (highScore) => {
-    addHighScore(highScore);
-    updateHighscores();
-});
-// Lägger till slutpoängen i topplistan och updaterar den
-function addHighScore(highScore) {
-    highScoreList.push(highScore);
-}
 // Lägger till alla slutpoäng från databasen
 function getHighScores() {
     $.get("http://localhost:3000/scores", (data) => {
-        data.forEach(addHighScore);
+        highScoreList = data;
         console.log(highScoreList);
         updateHighscores();
     });
@@ -131,9 +122,8 @@ function getHighScores() {
 // Skickat slutpoängen till servern
 function postHighscore(highScore) {
     console.log(highScore);
-    $.post("http://localhost:3000/scores", highScore);
-    highScoreList.push(highScore);
-    updateHighscores();
+    $.post("http://localhost:3000/scores", { HighScore: highScore });
+    getHighScores();
 }
 // Nollställning i början av varje spel
 function init() {
@@ -241,11 +231,8 @@ function endGame() {
     removeEventListener("click", createProjectile);
     removeEventListener("keydown", onKeyDown);
     removeEventListener("blur", pause);
-    // Lägger till spelaren på topplsitan
-    // @ts-ignore
-    let highScore = { Name: aliasInput.value, Score: score };
     // Sparar ner topplsitan i databasen
-    postHighscore(highScore);
+    postHighscore(score);
 }
 // Kollar om en fiende träffar spelaren
 function enemyHittingPlayer(enemy, enemyIndex) {
@@ -484,33 +471,19 @@ function updateHighscores() {
 }
 // Startknappen i start- och slutmenyn
 startGameButton.addEventListener("click", () => {
-    // Kollar om du ahr skrivit in ett korrekt giltigt namn
-    // @ts-ignore
-    if (aliasInput.value == "") {
-        // Nmanet är tomt
-        alert("Username is required.");
-        // @ts-ignore
-    }
-    else if (aliasInput.value.length > 12) {
-        // Namnet är för långt
-        alert("Username cannot be longer than 12 characters.");
-    }
-    else {
-        // *nmdrar vad som visas på skärmen
-        gameOverDisplay.style.display = "none";
-        scoreboardDisplay.style.display = "none";
-        controlsDisplay.style.display = "none";
-        statDisplay.style.display = "block";
-        progressDisplay.style.display = "flex";
-        // Nollstälelt allt inför spelet
-        init();
-        // Lägger till spelets eventLsiteners
-        addEventListener("keydown", onKeyDown);
-        addEventListener("keyup", onKeyUp);
-        addEventListener("blur", pause);
-        // Denna läggs till på detta viset för att spelaren itne ska sjkuta med knapptrycket de gjorde för att starta spelet
-        setTimeout(() => {
-            addEventListener("click", createProjectile);
-        });
-    }
+    gameOverDisplay.style.display = "none";
+    scoreboardDisplay.style.display = "none";
+    controlsDisplay.style.display = "none";
+    statDisplay.style.display = "block";
+    progressDisplay.style.display = "flex";
+    // Nollstälelt allt inför spelet
+    init();
+    // Lägger till spelets eventLsiteners
+    addEventListener("keydown", onKeyDown);
+    addEventListener("keyup", onKeyUp);
+    addEventListener("blur", pause);
+    // Denna läggs till på detta viset för att spelaren itne ska sjkuta med knapptrycket de gjorde för att starta spelet
+    setTimeout(() => {
+        addEventListener("click", createProjectile);
+    });
 });
