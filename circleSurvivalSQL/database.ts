@@ -21,7 +21,7 @@ const db = mysql.createConnection({
 });
 
 // Funktion för att kolla om användaren redan finns i databasen
-const checkUserExists = async (column, value) => {
+async function checkUserExists (column, value) {
   return new Promise((resolve, reject) => {
     db.query(
       `SELECT ${column} FROM users WHERE ${column} = ?`,
@@ -36,6 +36,18 @@ const checkUserExists = async (column, value) => {
     );
   });
 };
+
+async function hashPassword(password) {
+  return new Promise((resolve, reject) => {
+    bcrypt.hash(password, 10, function (err, hash) {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(hash);
+      }
+    });
+  });
+}
 
 db.connect((error) => {
   if (error) {
@@ -155,15 +167,15 @@ function updateUser(UserID, Username, EmailAdress, Password, PasswordConfirm) {
 
     /* Kollar om ett fält är ifyllt */
     if (
-      Username != null ||
-      EmailAdress != null ||
-      Password != null ||
-      PasswordConfirm != null
+      Username != "" ||
+      EmailAdress != "" ||
+      Password != "" ||
+      PasswordConfirm != ""
     ) {
       /* Om lösenordet ska ändras */
-      if (Password != null || PasswordConfirm != null) {
+      if (Password != "" || PasswordConfirm != "") {
         /* Bara ett lösenordsfält är ifyllt */
-        if (Password == null || PasswordConfirm == null) {
+        if (Password == "" || PasswordConfirm == "") {
           reject("Fill in both password fields to change password");
           /* Kollar om lösenordet är tillräckligt säkert */
         } else if (passwordRegex.test(Password) == false) {
@@ -175,13 +187,16 @@ function updateUser(UserID, Username, EmailAdress, Password, PasswordConfirm) {
           reject("The passwords do not match");
         } else {
           query += "Password = ?, ";
-          bcrypt.hash(Password, 10, function (err, hash) {
-            // @ts-ignore
-            params.push(hash);
-          });
+          await hashPassword(Password)
+            .then((hash) => {
+              Password = hash;
+            })
+            .catch((err) => console.error(err));
+          // @ts-ignore
+          params.push(Password);
         }
       }
-      if (EmailAdress != null) {
+      if (EmailAdress != "") {
         /* Kollar om e-postadressen är i korrekt format */
         if (emailRegex.test(EmailAdress) == false) {
           reject("Invalid email address");
@@ -193,7 +208,7 @@ function updateUser(UserID, Username, EmailAdress, Password, PasswordConfirm) {
           params.push(EmailAdress);
         }
       }
-      if (Username != null) {
+      if (Username != "") {
         if (await checkUserExists("EmailAdress", EmailAdress)) {
           reject("This email address is already in use");
         } else {
