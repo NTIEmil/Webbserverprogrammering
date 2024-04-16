@@ -144,7 +144,7 @@ $(() => {
 
 // Lägger till alla slutpoäng från databasen
 function getHighScores() {
-  $.get("http://localhost:3000/scores", (data) => {
+  $.get("/scores", (data) => {
     highScoreList = data;
     console.log(highScoreList);
     updateHighscores();
@@ -154,7 +154,7 @@ function getHighScores() {
 // Skickat slutpoängen till servern
 function postHighscore(highScore: Number) {
   console.log(highScore);
-  $.post("http://localhost:3000/scores", { HighScore: highScore });
+  $.post("/scores", { HighScore: highScore });
   getHighScores();
 }
 

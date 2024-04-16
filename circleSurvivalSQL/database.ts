@@ -146,9 +146,107 @@ function authenticateUser(Username, Password) {
   });
 }
 
+function updateUser(UserID, Username, EmailAdress, Password, PasswordConfirm) {
+  console.log(UserID, Username, EmailAdress, Password, PasswordConfirm);
+
+  return new Promise(async (resolve, reject) => {
+    let query = "UPDATE users SET ";
+    let params = [];
+
+    /* Kollar om ett fält är ifyllt */
+    if (
+      Username != null ||
+      EmailAdress != null ||
+      Password != null ||
+      PasswordConfirm != null
+    ) {
+      /* Om lösenordet ska ändras */
+      if (Password != null || PasswordConfirm != null) {
+        /* Bara ett lösenordsfält är ifyllt */
+        if (Password == null || PasswordConfirm == null) {
+          reject("Fill in both password fields to change password");
+          /* Kollar om lösenordet är tillräckligt säkert */
+        } else if (passwordRegex.test(Password) == false) {
+          reject(
+            "The password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number and one special character"
+          );
+          /* Kollar om lösenorden matchar */
+        } else if (Password != PasswordConfirm) {
+          reject("The passwords do not match");
+        } else {
+          query += "Password = ?, ";
+          bcrypt.hash(Password, 10, function (err, hash) {
+            // @ts-ignore
+            params.push(hash);
+          });
+        }
+      }
+      if (EmailAdress != null) {
+        /* Kollar om e-postadressen är i korrekt format */
+        if (emailRegex.test(EmailAdress) == false) {
+          reject("Invalid email address");
+        } else if (await checkUserExists("EmailAdress", EmailAdress)) {
+          reject("This email address is already in use");
+        } else {
+          query += "EmailAdress = ?, ";
+          // @ts-ignore
+          params.push(EmailAdress);
+        }
+      }
+      if (Username != null) {
+        if (await checkUserExists("EmailAdress", EmailAdress)) {
+          reject("This email address is already in use");
+        } else {
+          query += "Username = ?, ";
+          // @ts-ignore
+          params.push(Username);
+        }
+      }
+    } else {
+      reject("Fill in a field to change information");
+    }
+
+    // Remove the last comma and space
+    query = query.slice(0, -2);
+
+    query += " WHERE UserID = ?";
+    // @ts-ignore
+    params.push(UserID);
+
+    db.query(query, params, (err, result) => {
+      if (err) {
+        console.log(err);
+        reject(err);
+      } else {
+        console.log("Success");
+        resolve("User updated");
+      }
+    });
+  });
+}
+
+function getUserInfo(UserID) {
+  console.log(UserID);
+  return new Promise((resolve, reject) => {
+    db.query(
+      "SELECT Username as name, EmailAdress as email FROM users WHERE UserID = ?",
+      [UserID],
+      (err, rows) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve(rows);
+      }
+    );
+  });
+}
+
 module.exports = {
   getHighscores,
   addHighscore,
   registerUser,
   authenticateUser,
+  updateUser,
+  getUserInfo,
 };

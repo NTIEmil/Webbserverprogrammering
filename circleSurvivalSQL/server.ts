@@ -45,6 +45,20 @@ app.post("/scores", (req, res) => {
   database.addHighscore(req.session.userID, HighScore);
 });
 
+app.get("/auth/info", (req, res) => {
+  database
+    .getUserInfo(req.session.userID)
+    .then((rows) => {
+      console.log(rows);
+      res.send(rows);
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+});
+
+// The pages that the user can visit
+
 app.get("/register", (req, res) => {
   res.sendFile(path.join(__dirname, "dist/register.html"));
 });
@@ -66,7 +80,13 @@ app.get("/", (req, res) => {
   }
 });
 
-app.use(express.static(publicDir));
+app.get("/account", (req, res) => {
+  if (req.session.userID) {
+    res.sendFile(path.join(__dirname, "dist/account.html"));
+  } else {
+    res.redirect("/login");
+  }
+});
 
 // Tar emot poster från registeringsformuläret
 // Kollar att informationen stämmer och skickar tillbaka ett meddelande med resultatet
@@ -102,6 +122,23 @@ app.post("/auth/login", (req, res) => {
       res.redirect("/login?message=" + encodeURIComponent(errorMessage));
     });
 });
+
+app.post("/auth/account", async (req, res) => {
+  let { name, email, password, password_confirm } = req.body;
+  console.log("Updating account" + name, email, password, password_confirm);
+  database
+    .updateUser(req.session.userID, name, email, password, password_confirm)
+    .then((message) => {
+      console.log(message);
+      res.redirect("/account");
+    })
+    .catch((errorMessage) => {
+      console.log(errorMessage);
+      res.redirect("/account?message=" + encodeURIComponent(errorMessage));
+    });
+});
+
+app.use(express.static(publicDir));
 
 // Kollar när en användare har anslutit
 // io.on("connection", (socket) => {
