@@ -51,7 +51,6 @@ window.onload = function () {
                     messageElement.textContent =
                         "The password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number and one special character";
                     inputError = true;
-                    console.log("Local password error");
                     /* Kollar om lösenorden matchar */
                 }
                 else if (password.value != passwordConfirm.value) {
