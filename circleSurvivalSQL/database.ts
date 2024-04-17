@@ -2,6 +2,8 @@ const mysql = require("mysql");
 const dotenv = require("dotenv");
 const bcrypt = require("bcryptjs");
 
+const emailSender = require("./emailSender.ts");
+
 dotenv.config({ path: "./.env" });
 
 // Regex för att validera e-postadresser och lösenord
@@ -21,7 +23,7 @@ const db = mysql.createConnection({
 });
 
 // Funktion för att kolla om användaren redan finns i databasen
-async function checkUserExists (column, value) {
+async function checkUserExists(column, value) {
   return new Promise((resolve, reject) => {
     db.query(
       `SELECT ${column} FROM users WHERE ${column} = ?`,
@@ -35,7 +37,7 @@ async function checkUserExists (column, value) {
       }
     );
   });
-};
+}
 
 async function hashPassword(password) {
   return new Promise((resolve, reject) => {
@@ -251,6 +253,11 @@ function getUserInfo(UserID) {
           reject(err);
           return;
         }
+        emailSender.sendEmail(
+          rows.email,
+          "Test mail",
+          "You have accessed your settings."
+        );
         resolve(rows);
       }
     );

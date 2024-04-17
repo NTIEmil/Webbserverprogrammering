@@ -9,12 +9,13 @@ const transporter = nodemailer.createTransport({
 });
 
 async function sendEmail(email, subject, text) {
+  console.log("object");
   new Promise((resolve, reject) => {
     let mailOptions = {
-      from: "your-email@gmail.com",
+      from: process.env.EMAIL_ADRESS,
       to: email,
       subject: subject,
-      text: text
+      text: text,
     };
 
     transporter.sendMail(mailOptions, (error, info) => {

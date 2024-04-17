@@ -7,7 +7,6 @@ const path = require("path");
 const session = require("express-session");
 
 const database = require("./database.ts");
-const emailSender = require("./emailSender.ts");
 
 const publicDir = path.join(__dirname, "./dist");
 
