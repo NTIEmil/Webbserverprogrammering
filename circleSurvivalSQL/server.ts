@@ -7,6 +7,7 @@ const path = require("path");
 const session = require("express-session");
 
 const database = require("./database.ts");
+const emailSender = require("./emailSender.ts");
 
 const publicDir = path.join(__dirname, "./dist");
 
@@ -139,11 +140,6 @@ app.post("/auth/account", async (req, res) => {
 });
 
 app.use(express.static(publicDir));
-
-// Kollar när en användare har anslutit
-// io.on("connection", (socket) => {
-//   console.log("Användare ansluten");
-// });
 
 http.listen(3000, () => {
   console.log("Servern körs, besök http://localhost:3000");
