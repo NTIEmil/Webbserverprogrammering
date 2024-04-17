@@ -1,10 +1,7 @@
 const mysql = require("mysql");
-const dotenv = require("dotenv");
 const bcrypt = require("bcryptjs");
 
 const emailSender = require("./emailSender.ts");
-
-dotenv.config({ path: "./.env" });
 
 // Regex för att validera e-postadresser och lösenord
 const emailRegex = new RegExp(
@@ -254,7 +251,7 @@ function getUserInfo(UserID) {
           return;
         }
         emailSender.sendEmail(
-          rows.email,
+          rows[0].email,
           "Test mail",
           "You have accessed your settings."
         );

@@ -1,7 +1,13 @@
 const nodemailer = require("nodemailer");
 
+const dotenv = require("dotenv");
+
+dotenv.config({ path: "./.env" });
+
 const transporter = nodemailer.createTransport({
-  service: process.env.EMAIL_SERVICE,
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
   auth: {
     user: process.env.EMAIL_ADRESS,
     pass: process.env.EMAIL_PASSWORD,
@@ -9,7 +15,6 @@ const transporter = nodemailer.createTransport({
 });
 
 async function sendEmail(email, subject, text) {
-  console.log("object");
   new Promise((resolve, reject) => {
     let mailOptions = {
       from: process.env.EMAIL_ADRESS,
