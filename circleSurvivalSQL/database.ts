@@ -1,5 +1,6 @@
 const mysql = require("mysql");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const emailSender = require("./emailSender.ts");
 
@@ -46,6 +47,16 @@ async function hashPassword(password) {
       }
     });
   });
+}
+
+function generateTokenForUser(EmailAdress) {
+  let payload = { EmailAdress: EmailAdress };
+
+  let secret = process.env.JWT_SECRET;
+
+  let token = jwt.sign(payload, secret, { expiresIn: "24h" });
+
+  return token;
 }
 
 db.connect((error) => {
@@ -127,7 +138,7 @@ function registerUser(Username, EmailAdress, Password, PasswordConfirm) {
 function authenticateUser(Username, Password) {
   return new Promise((resolve, reject) => {
     db.query(
-      "SELECT Username, Password, UserID FROM users WHERE Username = ?",
+      "SELECT Username, Password, UserID, Verified FROM users WHERE Username = ?",
       [Username],
       async (error, result) => {
         if (error) {
@@ -145,7 +156,13 @@ function authenticateUser(Username, Password) {
             function (err, passwordResult) {
               if (passwordResult) {
                 console.log("User logged in");
-                resolve(result[0].UserID);
+
+                let response = {
+                  userID: result[0].UserID,
+                  verified: result[0].Verified,
+                };
+
+                resolve(response);
               } else {
                 reject("Wrong username or password");
               }
@@ -250,14 +267,91 @@ function getUserInfo(UserID) {
           reject(err);
           return;
         }
-        emailSender.sendEmail(
-          rows[0].email,
-          "Test mail",
-          "You have accessed your settings."
-        );
         resolve(rows);
       }
     );
+  });
+}
+
+function sendUserVerification(UserID) {
+  return new Promise(async (resolve, reject) => {
+    let user = await getUserInfo(UserID);
+
+    // @ts-ignore
+    let token = generateTokenForUser(user[0].email);
+
+    let url = `http://localhost:3000/verify?token=${token}`;
+
+    let subject = "Verify your email address";
+    let html = `<p>Click <a href="${url}">here</a> to verify your email address</p>`;
+
+    emailSender
+      // @ts-ignore
+      .sendEmail(user[0].email, subject, html)
+      .then((result) => {
+        console.log(result);
+        resolve("Email sent");
+      })
+      .catch((err) => {
+        console.log(err);
+        reject(err);
+      });
+  });
+}
+
+function verifyUser(token) {
+  return new Promise((resolve, reject) => {
+    try {
+      // Verify the token
+      let payload = jwt.verify(token, process.env.JWT_SECRET);
+
+      // Get the user ID from the payload
+      let EmailAdress = payload.EmailAdress;
+
+      // Update the user's record in the database
+      db.query(
+        "UPDATE users SET Verified = 1 WHERE EmailAdress = ?",
+        [EmailAdress],
+        (err, result) => {
+          if (err) {
+            console.log(err);
+            reject(err);
+          } else {
+            console.log("User verified");
+          }
+        }
+      );
+      db.query(
+        "SELECT UserID FROM users WHERE EmailAdress = ?",
+        [EmailAdress],
+        (err, result) => {
+          if (err) {
+            console.log(err);
+            reject(err);
+          } else {
+            console.log("User verified");
+            resolve(result[0].UserID);
+          }
+        }
+      );
+    } catch (err) {
+      console.log(err);
+      reject(err);
+    }
+  });
+}
+
+function deleteUser(UserID) {
+  return new Promise((resolve, reject) => {
+    db.query("DELETE FROM users WHERE UserID = ?", [UserID], (err, result) => {
+      if (err) {
+        console.log(err);
+        reject(err);
+      } else {
+        console.log("User deleted");
+        resolve("User deleted");
+      }
+    });
   });
 }
 
@@ -268,4 +362,7 @@ module.exports = {
   authenticateUser,
   updateUser,
   getUserInfo,
+  sendUserVerification,
+  verifyUser,
+  deleteUser,
 };

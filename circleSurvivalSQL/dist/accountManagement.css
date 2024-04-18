@@ -1,6 +1,5 @@
 .center-div {
-  position: fixed;
-  inset: 0;
+  position: static;
   display: flex;
   align-items: center;
   justify-content: center;

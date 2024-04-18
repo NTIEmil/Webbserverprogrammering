@@ -17,7 +17,7 @@ app.use(
 
 app.use(
   session({
-    secret: "your secret",
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
   })
@@ -73,8 +73,12 @@ app.get("/index.html", (req, res) => {
 
 app.get("/", (req, res) => {
   if (req.session.userID) {
-    res.sendFile(path.join(__dirname, "dist/index.html"));
-    console.log("UserID connected:" + req.session.userID);
+    if (!req.session.verified) {
+      res.redirect("/verification");
+    } else {
+      res.sendFile(path.join(__dirname, "dist/index.html"));
+      console.log("UserID connected:" + req.session.userID);
+    }
   } else {
     res.redirect("/login");
   }
@@ -82,10 +86,75 @@ app.get("/", (req, res) => {
 
 app.get("/account", (req, res) => {
   if (req.session.userID) {
-    res.sendFile(path.join(__dirname, "dist/account.html"));
+    console.log("Account: " + req.session.verified);
+    if (!req.session.verified) {
+      res.redirect("/verification");
+    } else {
+      res.sendFile(path.join(__dirname, "dist/account.html"));
+    }
   } else {
     res.redirect("/login");
   }
+});
+
+app.get("/verify", async (req, res) => {
+  console.log("verifying email");
+  try {
+    // Get the token from the URL query parameters
+    let token = req.query.token;
+
+    // Verify the user's email address
+    req.session.userID = database.verifyUser(token);
+
+    // Redirect the user to the home page
+    res.redirect("/");
+  } catch (err) {
+    // Handle any errors that occurred
+    console.error(err);
+    res
+      .status(500)
+      .send("An error occurred while verifying your email address.");
+  }
+});
+
+app.get("/verification", (req, res) => {
+  if (req.session.userID) {
+    if (!req.session.verified) {
+      database.sendUserVerification(req.session.userID);
+      res.sendFile(path.join(__dirname, "dist/verification.html"));
+    } else {
+      res.redirect("/");
+    }
+  } else {
+    res.redirect("/login");
+  }
+});
+
+app.post("/auth/logout", (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.sendStatus(500);
+    }
+
+    console.log("Logged out");
+
+    res.clearCookie("connect.sid");
+    res.sendStatus(200);
+  });
+});
+
+app.post("/auth/deleteAccount", (req, res) => {
+  database.deleteUser(req.session.userID);
+
+  req.session.destroy((err) => {
+    if (err) {
+      return res.sendStatus(500);
+    }
+
+    res.clearCookie("connect.sid");
+
+    res.sendStatus(200);
+  });
 });
 
 // Tar emot poster från registeringsformuläret
@@ -97,7 +166,7 @@ app.post("/auth/register", async (req, res) => {
     .registerUser(name, email, password, password_confirm)
     .then((message) => {
       console.log(message);
-      res.redirect("/");
+      res.redirect("/verification");
     })
     .catch((errorMessage) => {
       console.log(errorMessage);
@@ -112,10 +181,15 @@ app.post("/auth/login", (req, res) => {
   let { name, password } = req.body;
   database
     .authenticateUser(name, password)
-    .then((userID) => {
-      console.log("Logged in userID: " + userID);
-      req.session.userID = userID;
-      res.redirect("/");
+    .then((result) => {
+      console.log("Logged in userID: " + result.userID);
+      req.session.userID = result.userID;
+      req.session.verified = result.verified;
+      if (!req.session.verified) {
+        res.redirect("/verification");
+      } else {
+        res.redirect("/");
+      }
     })
     .catch((errorMessage) => {
       console.log(errorMessage);

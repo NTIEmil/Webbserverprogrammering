@@ -87,4 +87,46 @@ window.onload = function () {
         messageElement.style.display = "block";
       }
     });
+
+  document
+    .getElementById("logoutButton")!
+    .addEventListener("click", function () {
+      console.log("Logging out");
+      fetch("/auth/logout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((response) => {
+          if (response.ok) {
+            console.log("Logged out");
+            window.location.href = "/login";
+          } else {
+            console.error("Logout failed");
+          }
+        })
+        .catch((error) => console.error("Error:", error));
+    });
+  
+  document
+    .getElementById("deleteButton")!
+    .addEventListener("click", function () {
+      console.log("Deleteing account");
+      fetch("/auth/deleteAccount", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((response) => {
+          if (response.ok) {
+            console.log("Account delted");
+            window.location.href = "/login";
+          } else {
+            console.error("Deletion failed");
+          }
+        })
+        .catch((error) => console.error("Error:", error));
+    });
 };
