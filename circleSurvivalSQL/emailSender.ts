@@ -29,7 +29,7 @@ async function sendEmail(email, subject, html) {
         reject(error);
       } else {
         console.log("Email sent: " + info.response);
-        resolve("User created");
+        resolve("Email sent");
       }
     });
   });

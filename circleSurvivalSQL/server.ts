@@ -104,7 +104,10 @@ app.get("/verify", async (req, res) => {
     let token = req.query.token;
 
     // Verify the user's email address
-    req.session.userID = database.verifyUser(token);
+    req.session.userID = await database.verifyUser(token);
+    req.session.verified = true;
+
+    console.log("Verified userID: " + req.session.userID);
 
     // Redirect the user to the home page
     res.redirect("/");
@@ -128,6 +131,20 @@ app.get("/verification", (req, res) => {
   } else {
     res.redirect("/login");
   }
+});
+
+app.get("/forgottenPassword", (req, res) => {
+  res.sendFile(path.join(__dirname, "dist/forgottenPassword.html"));
+});
+
+app.get("/resetPassword", (req, res) => {
+  // Get the token from the URL query parameters
+  let token = req.query.token;
+
+  // Get users ID from token
+  req.session.userID = database.getUserID(token);
+
+  res.sendFile(path.join(__dirname, "dist/resetPassword.html"));
 });
 
 app.post("/auth/logout", (req, res) => {
@@ -164,8 +181,9 @@ app.post("/auth/register", async (req, res) => {
   let { name, email, password, password_confirm } = req.body;
   database
     .registerUser(name, email, password, password_confirm)
-    .then((message) => {
-      console.log(message);
+    .then((userID) => {
+      req.session.userID = userID;
+      console.log("Registered userID: " + userID);
       res.redirect("/verification");
     })
     .catch((errorMessage) => {
@@ -209,6 +227,23 @@ app.post("/auth/account", async (req, res) => {
     .catch((errorMessage) => {
       console.log(errorMessage);
       res.redirect("/account?message=" + encodeURIComponent(errorMessage));
+    });
+});
+
+app.post("/auth/forgottenPassword", async (req, res) => {
+  let { email } = req.body;
+  console.log("Forgotten password: " + email);
+  database
+    .forgottenPassword(email)
+    .then((message) => {
+      console.log(message);
+      res.redirect("/forgottenPassword");
+    })
+    .catch((errorMessage) => {
+      console.log(errorMessage);
+      res.redirect(
+        "/forgottenPassword?message=" + encodeURIComponent(errorMessage)
+      );
     });
 });
 

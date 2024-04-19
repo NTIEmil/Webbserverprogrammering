@@ -94,6 +94,44 @@ function addHighscore(UserID, Score) {
   );
 }
 
+function getUserID(EmailAddress) {
+  return new Promise((resolve, reject) => {
+    db.query(
+      "SELECT UserID FROM users WHERE EmailAdress = ?",
+      [EmailAddress],
+      (err, result) => {
+        if (err) {
+          console.log(err);
+          reject(err);
+        } else {
+          console.log("UserID found: " + result[0].UserID);
+          resolve(result[0].UserID);
+        }
+      }
+    );
+  });
+}
+
+function addAccountToDB(Username, EmailAdress, Password) {
+  return new Promise((resolve, reject) => {
+    bcrypt.hash(Password, 10, function (err, hash) {
+      db.query(
+        "INSERT INTO users SET?",
+        { Username: Username, EmailAdress: EmailAdress, Password: hash },
+        (err, result) => {
+          if (err) {
+            console.log(err);
+            reject(err);
+          } else {
+            console.log("User registered");
+            resolve("User registered");
+          }
+        }
+      );
+    });
+  });
+}
+
 function registerUser(Username, EmailAdress, Password, PasswordConfirm) {
   return new Promise(async (resolve, reject) => {
     // Kollar om det redan finns en användare med samma namn
@@ -114,23 +152,8 @@ function registerUser(Username, EmailAdress, Password, PasswordConfirm) {
     } else if (Password !== PasswordConfirm) {
       reject("The passwords do not match");
     } else {
-      // Krypterar lösenordet
-      bcrypt.hash(Password, 10, function (err, hash) {
-        // Lägger till användaren i databasen
-        db.query(
-          "INSERT INTO users SET?",
-          { Username: Username, EmailAdress: EmailAdress, Password: hash },
-          (err, result) => {
-            if (err) {
-              console.log(err);
-              reject(err);
-            } else {
-              console.log("Success");
-              resolve("User registered");
-            }
-          }
-        );
-      });
+      await addAccountToDB(Username, EmailAdress, Password);
+      resolve(getUserID(EmailAdress));
     }
   });
 }
@@ -300,7 +323,7 @@ function sendUserVerification(UserID) {
 }
 
 function verifyUser(token) {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     try {
       // Verify the token
       let payload = jwt.verify(token, process.env.JWT_SECRET);
@@ -321,19 +344,9 @@ function verifyUser(token) {
           }
         }
       );
-      db.query(
-        "SELECT UserID FROM users WHERE EmailAdress = ?",
-        [EmailAdress],
-        (err, result) => {
-          if (err) {
-            console.log(err);
-            reject(err);
-          } else {
-            console.log("User verified");
-            resolve(result[0].UserID);
-          }
-        }
-      );
+      let UserID = await getUserID(EmailAdress);
+      console.log(UserID);
+      resolve(UserID);
     } catch (err) {
       console.log(err);
       reject(err);
@@ -355,6 +368,34 @@ function deleteUser(UserID) {
   });
 }
 
+function forgottenPassword(EmailAdress) {
+  return new Promise(async (resolve, reject) => {
+    let userExists = await checkUserExists("EmailAdress", EmailAdress);
+
+    if (userExists) {
+      let token = generateTokenForUser(EmailAdress);
+
+      let url = `http://localhost:3000/resetPassword?token=${token}`;
+
+      let subject = "Reset your password";
+      let html = `<p>Click <a href="${url}">here</a> to reset your password</p>`;
+
+      emailSender
+        .sendEmail(EmailAdress, subject, html)
+        .then((result) => {
+          console.log(result);
+          resolve("Email sent");
+        })
+        .catch((err) => {
+          console.log(err);
+          reject(err);
+        });
+    } else {
+      reject("No user with that email address exists");
+    }
+  });
+}
+
 module.exports = {
   getHighscores,
   addHighscore,
@@ -365,4 +406,6 @@ module.exports = {
   sendUserVerification,
   verifyUser,
   deleteUser,
+  forgottenPassword,
+  getUserID,
 };
