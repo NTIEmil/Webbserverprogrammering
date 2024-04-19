@@ -407,5 +407,4 @@ module.exports = {
   verifyUser,
   deleteUser,
   forgottenPassword,
-  getUserID,
 };
