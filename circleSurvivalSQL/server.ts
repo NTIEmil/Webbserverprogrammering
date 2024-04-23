@@ -139,10 +139,7 @@ app.get("/forgottenPassword", (req, res) => {
 
 app.get("/resetPassword", (req, res) => {
   // Get the token from the URL query parameters
-  let token = req.query.token;
-
-  // Get users ID from token
-  req.session.userID = database.getUserID(token);
+  req.session.token = req.query.token;
 
   res.sendFile(path.join(__dirname, "dist/resetPassword.html"));
 });
@@ -244,6 +241,23 @@ app.post("/auth/forgottenPassword", async (req, res) => {
       res.redirect(
         "/forgottenPassword?message=" + encodeURIComponent(errorMessage)
       );
+    });
+});
+
+app.post("/auth/resetPassword", async (req, res) => {
+  let { password, password_confirm } = req.body;
+  console.log("Reset password: " + password);
+  database
+    .resetPassword(req.session.token, password, password_confirm)
+    .then((result) => {
+      console.log("Reset password userID: " + result.userID);
+      req.session.userID = result.userID;
+      req.session.verified = result.verified;
+      res.redirect("/");
+    })
+    .catch((errorMessage) => {
+      console.log(errorMessage);
+      res.redirect("/resetPassword?message=" + encodeURIComponent(errorMessage));
     });
 });
 

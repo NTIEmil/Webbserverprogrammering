@@ -356,15 +356,25 @@ function verifyUser(token) {
 
 function deleteUser(UserID) {
   return new Promise((resolve, reject) => {
+    // Delete the user's account
     db.query("DELETE FROM users WHERE UserID = ?", [UserID], (err, result) => {
       if (err) {
         console.log(err);
         reject(err);
       } else {
-        console.log("User deleted");
-        resolve("User deleted");
+        console.log("User account deleted");
       }
     });
+    // Delete the user's highscores
+    db.query("DELETE FROM highscores WHERE UserID = ?", [UserID], (err, result) => {
+      if (err) {
+        console.log(err);
+        reject(err);
+      } else {
+        console.log("User highscores deleted");
+      }
+    });
+    resolve("User deleted");
   });
 }
 
@@ -396,6 +406,57 @@ function forgottenPassword(EmailAdress) {
   });
 }
 
+function resetPassword(token, Password, PasswordConfirm) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      // Verify the token
+      let payload = jwt.verify(token, process.env.JWT_SECRET);
+
+      // Get the user's email address from the payload
+      let EmailAdress = payload.EmailAdress;
+
+      // Check if the passwords match
+      if (passwordRegex.test(Password) == false) {
+        reject(
+          "The password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number and one special character"
+        );
+      } else if (Password !== PasswordConfirm) {
+        reject("The passwords do not match");
+      } else {
+        // Hash the new password
+        bcrypt.hash(Password, 10, function (err, hash) {
+          // Update the user's password in the database and verify the account
+          // since they have confirmed that they have access to the email address
+          db.query(
+            "UPDATE users SET Password = ?, Verified = 1 WHERE EmailAdress = ?",
+            [hash, EmailAdress],
+            (err, result) => {
+              if (err) {
+                console.log(err);
+                reject(err);
+              } else {
+                console.log("Password reset");
+
+                // Sends back the UserID and that the account is verified
+                // This is more secure than just setting it to varified the main server-file
+                let response = {
+                  userID: getUserID(EmailAdress),
+                  verified: 1,
+                };
+
+                resolve(response);
+              }
+            }
+          );
+        });
+      }
+    } catch (err) {
+      console.log(err);
+      reject(err);
+    }
+  });
+}
+
 module.exports = {
   getHighscores,
   addHighscore,
@@ -407,4 +468,5 @@ module.exports = {
   verifyUser,
   deleteUser,
   forgottenPassword,
+  resetPassword,
 };
