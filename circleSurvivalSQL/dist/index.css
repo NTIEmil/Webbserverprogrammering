@@ -81,6 +81,13 @@ button:hover {
   -webkit-text-stroke: 0.04rem black;
 }
 
+
+.center-display button.grayButton {
+  background-color: gray;
+  width: 50%;
+  margin-bottom: 1rem;
+}
+
 /* ################## */
 /* Erfarenhetsvisaren */
 /* ################## */
@@ -170,6 +177,20 @@ button:hover {
 .side-left {
   left: 20vw;
   transform: translate(-50%, -50%);
+}
+
+/* Buttons for the score table */
+.side-display div.toggle-buttons-div {
+  display: flex;
+}
+
+.toggle-button {
+  background-color: gray;
+  margin-bottom: 1rem;
+}
+
+.toggle-button.active {
+  background-color: rgb(59 130 246);
 }
 
 /* ######## */

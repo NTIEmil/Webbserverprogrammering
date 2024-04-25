@@ -46,13 +46,13 @@
         <!-- Ditt slutliga resultat -->
         <h1 id="finalScoreElement">0</h1>
         <p>Points</p>
-        <!-- Användarens namn @Add -->
+        <a href="/account">
+          <button class="grayButton">Account</button>
+        </a>
         <!-- Startknapp -->
         <div>
           <button id="startGameButton">Start Game</button>
         </div>
-        <a href="register.html">Register</a>
-        <a href="account.html">Account</a>
       </div>
     </div>
 
@@ -71,6 +71,11 @@
       <div class="side-display">
         <!-- Titel -->
         <h1>Highscores</h1>
+        <div class="toggle-buttons-div">
+          <button class="toggle-button active" id="global">Global</button>
+          <button class="toggle-button" id="following">Following</button>
+          <button class="toggle-button" id="personal">Personal</button>
+        </div>
         <!-- Tabell med toppoäng -->
         <div>
           <table class="table table-text-large" id="scoreboardTable"></table>

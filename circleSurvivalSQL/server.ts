@@ -26,9 +26,21 @@ app.use(
 app.use(express.urlencoded({ extended: "false" }));
 app.use(express.json());
 
-app.get("/scores", (req, res) => {
+app.get("/scores/global", (req, res) => {
   database
-    .getHighscores()
+    .getGlobalHighscores()
+    .then((rows) => {
+      console.log(rows);
+      res.send(rows);
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+});
+
+app.get("/scores/personal", (req, res) => {
+  database
+    .getPersonalHighscores(req.session.userID)
     .then((rows) => {
       console.log(rows);
       res.send(rows);
@@ -257,7 +269,27 @@ app.post("/auth/resetPassword", async (req, res) => {
     })
     .catch((errorMessage) => {
       console.log(errorMessage);
-      res.redirect("/resetPassword?message=" + encodeURIComponent(errorMessage));
+      res.redirect(
+        "/resetPassword?message=" + encodeURIComponent(errorMessage)
+      );
+    });
+});
+
+app.post("/auth/follow", async (req, res) => {
+  let { name } = req.body;
+
+  console.log("Following: " + name);
+  console.log("Follower: " + req.session.userID);
+
+  database
+    .followUser(req.session.userID, name)
+    .then((message) => {
+      console.log(message);
+      res.redirect("/account");
+    })
+    .catch((errorMessage) => {
+      console.log(errorMessage);
+      res.redirect("/account?message=" + encodeURIComponent(errorMessage));
     });
 });
 

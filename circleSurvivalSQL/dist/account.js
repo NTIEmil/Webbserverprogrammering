@@ -7,6 +7,7 @@ window.onload = function () {
     let password = document.getElementById("password-chg");
     let passwordConfirm = document.getElementById("password-conf-chg");
     let messageElement = document.querySelector(".alert-danger");
+    let followName = document.getElementById("name-flw");
     const urlParams = new URLSearchParams(window.location.search);
     const errorMessage = urlParams.get("message");
     // Get information about the account and display it in the form
@@ -31,7 +32,7 @@ window.onload = function () {
     /* Kollar formuläret när anvädneren vill skicka in det */
     document
         .getElementById("submit-button")
-        .addEventListener("click", function (event) {
+        .addEventListener("click", (event) => {
         let inputError = false;
         /* Kollar om ett fält är ifyllt */
         if (name.value != "" ||
@@ -77,8 +78,24 @@ window.onload = function () {
         }
     });
     document
-        .getElementById("logoutButton")
-        .addEventListener("click", function () {
+        .getElementById("follow-button")
+        .addEventListener("click", (event) => {
+        let inputError = false;
+        if (followName.value == "") {
+            messageElement.textContent =
+                "Fill in the username of whom you want to follow";
+            inputError = true;
+        }
+        else if (followName.value == name.placeholder) {
+            messageElement.textContent = "You can't follow yourself";
+            inputError = true;
+        }
+        if (inputError == true) {
+            event.preventDefault();
+            messageElement.style.display = "block";
+        }
+    });
+    document.getElementById("logoutButton").addEventListener("click", () => {
         console.log("Logging out");
         fetch("/auth/logout", {
             method: "POST",
@@ -97,9 +114,7 @@ window.onload = function () {
         })
             .catch((error) => console.error("Error:", error));
     });
-    document
-        .getElementById("deleteButton")
-        .addEventListener("click", function () {
+    document.getElementById("deleteButton").addEventListener("click", () => {
         console.log("Deleteing account");
         fetch("/auth/deleteAccount", {
             method: "POST",

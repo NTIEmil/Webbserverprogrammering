@@ -10,6 +10,7 @@ canvas.height = innerHeight;
 const statDisplay = document.querySelector("#statDisplay");
 const scoreElement = document.querySelector("#scoreElement");
 const lifeElement = document.querySelector("#lifeElement");
+const highscoreButtons = document.querySelectorAll(".toggle-button");
 // Start- och slutmenyn
 const gameOverDisplay = document.querySelector("#gameOverDisplay");
 const startGameButton = document.querySelector("#startGameButton");
@@ -104,6 +105,8 @@ let score;
 let enemySpawnDelay;
 let experiencePoints;
 let experiencePerLevel;
+// Starting highscore filter
+let highscoreFilter = "global";
 // Server-kommunikation
 // @ts-ignore
 const socket = io();
@@ -112,8 +115,11 @@ $(() => {
     getHighScores();
 });
 // Lägger till alla slutpoäng från databasen
-function getHighScores() {
-    $.get("/scores", (data) => {
+function getHighScores(filter) {
+    if (filter) {
+        highscoreFilter = filter;
+    }
+    $.get(`/scores/${highscoreFilter}`, (data) => {
         highScoreList = data;
         console.log(highScoreList);
         updateHighscores();
@@ -469,6 +475,21 @@ function updateHighscores() {
         scoreboardTable.appendChild(tableRow);
     }
 }
+// Updates the highscore lsit and colour of the toggle buttons whenever one
+// of the is pressed.
+highscoreButtons.forEach(function (button) {
+    button.addEventListener("click", () => {
+        // Remove 'active' class from all buttons
+        highscoreButtons.forEach(function (btn) {
+            btn.classList.remove("active");
+        });
+        // Add 'active' class to the clicked button
+        // @ts-ignore
+        button.classList.add("active");
+        // Update highscore list
+        getHighScores(button.id);
+    });
+});
 // Startknappen i start- och slutmenyn
 startGameButton.addEventListener("click", () => {
     gameOverDisplay.style.display = "none";

@@ -8,6 +8,7 @@ window.onload = function () {
     "password-conf-chg"
   )! as HTMLInputElement;
   let messageElement = document.querySelector<HTMLElement>(".alert-danger")!;
+  let followName = document.getElementById("name-flw")! as HTMLInputElement;
 
   const urlParams = new URLSearchParams(window.location.search);
   const errorMessage = urlParams.get("message");
@@ -42,7 +43,7 @@ window.onload = function () {
   /* Kollar formuläret när anvädneren vill skicka in det */
   document
     .getElementById("submit-button")!
-    .addEventListener("click", function (event) {
+    .addEventListener("click", (event) => {
       let inputError = false;
 
       /* Kollar om ett fält är ifyllt */
@@ -89,44 +90,60 @@ window.onload = function () {
     });
 
   document
-    .getElementById("logoutButton")!
-    .addEventListener("click", function () {
-      console.log("Logging out");
-      fetch("/auth/logout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-        .then((response) => {
-          if (response.ok) {
-            console.log("Logged out");
-            window.location.href = "/login";
-          } else {
-            console.error("Logout failed");
-          }
-        })
-        .catch((error) => console.error("Error:", error));
+    .getElementById("follow-button")!
+    .addEventListener("click", (event) => {
+      let inputError = false;
+
+      if (followName.value == "") {
+        messageElement.textContent =
+          "Fill in the username of whom you want to follow";
+        inputError = true;
+      } else if (followName.value == name.placeholder) {
+        messageElement.textContent = "You can't follow yourself";
+        inputError = true;
+      }
+
+      if (inputError == true) {
+        event.preventDefault();
+        messageElement.style.display = "block";
+      }
     });
-  
-  document
-    .getElementById("deleteButton")!
-    .addEventListener("click", function () {
-      console.log("Deleteing account");
-      fetch("/auth/deleteAccount", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+
+  document.getElementById("logoutButton")!.addEventListener("click", () => {
+    console.log("Logging out");
+    fetch("/auth/logout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => {
+        if (response.ok) {
+          console.log("Logged out");
+          window.location.href = "/login";
+        } else {
+          console.error("Logout failed");
+        }
       })
-        .then((response) => {
-          if (response.ok) {
-            console.log("Account delted");
-            window.location.href = "/login";
-          } else {
-            console.error("Deletion failed");
-          }
-        })
-        .catch((error) => console.error("Error:", error));
-    });
+      .catch((error) => console.error("Error:", error));
+  });
+
+  document.getElementById("deleteButton")!.addEventListener("click", () => {
+    console.log("Deleteing account");
+    fetch("/auth/deleteAccount", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => {
+        if (response.ok) {
+          console.log("Account delted");
+          window.location.href = "/login";
+        } else {
+          console.error("Deletion failed");
+        }
+      })
+      .catch((error) => console.error("Error:", error));
+  });
 };

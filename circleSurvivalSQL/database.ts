@@ -67,7 +67,7 @@ db.connect((error) => {
   }
 });
 
-function getHighscores() {
+function getGlobalHighscores() {
   return new Promise((resolve, reject) => {
     db.query(
       "SELECT highscores.Score, users.Username AS Name FROM highscores JOIN users ON highscores.UserID = users.UserID",
@@ -76,7 +76,22 @@ function getHighscores() {
           reject(err);
           return;
         }
-        // console.log(rows + " in database.ts");
+        resolve(rows);
+      }
+    );
+  });
+}
+
+function getPersonalHighscores(UserID) {
+  return new Promise((resolve, reject) => {
+    db.query(
+      "SELECT highscores.Score, users.Username AS Name FROM highscores JOIN users ON highscores.UserID = users.UserID WHERE users.UserID = ?",
+      [UserID],
+      (err, rows) => {
+        if (err) {
+          reject(err);
+          return;
+        }
         resolve(rows);
       }
     );
@@ -94,11 +109,11 @@ function addHighscore(UserID, Score) {
   );
 }
 
-function getUserID(EmailAddress) {
+function getUserID(attribute, value) {
   return new Promise((resolve, reject) => {
     db.query(
-      "SELECT UserID FROM users WHERE EmailAdress = ?",
-      [EmailAddress],
+      "SELECT UserID FROM users WHERE ?? = ?",
+      [attribute, value],
       (err, result) => {
         if (err) {
           console.log(err);
@@ -153,7 +168,7 @@ function registerUser(Username, EmailAdress, Password, PasswordConfirm) {
       reject("The passwords do not match");
     } else {
       await addAccountToDB(Username, EmailAdress, Password);
-      resolve(getUserID(EmailAdress));
+      resolve(getUserID("EmailAdress", EmailAdress));
     }
   });
 }
@@ -344,7 +359,7 @@ function verifyUser(token) {
           }
         }
       );
-      let UserID = await getUserID(EmailAdress);
+      let UserID = await getUserID("EmailAdress", EmailAdress);
       console.log(UserID);
       resolve(UserID);
     } catch (err) {
@@ -366,14 +381,18 @@ function deleteUser(UserID) {
       }
     });
     // Delete the user's highscores
-    db.query("DELETE FROM highscores WHERE UserID = ?", [UserID], (err, result) => {
-      if (err) {
-        console.log(err);
-        reject(err);
-      } else {
-        console.log("User highscores deleted");
+    db.query(
+      "DELETE FROM highscores WHERE UserID = ?",
+      [UserID],
+      (err, result) => {
+        if (err) {
+          console.log(err);
+          reject(err);
+        } else {
+          console.log("User highscores deleted");
+        }
       }
-    });
+    );
     resolve("User deleted");
   });
 }
@@ -440,7 +459,7 @@ function resetPassword(token, Password, PasswordConfirm) {
                 // Sends back the UserID and that the account is verified
                 // This is more secure than just setting it to varified the main server-file
                 let response = {
-                  userID: getUserID(EmailAdress),
+                  userID: getUserID("EmailAdress", EmailAdress),
                   verified: 1,
                 };
 
@@ -457,8 +476,38 @@ function resetPassword(token, Password, PasswordConfirm) {
   });
 }
 
+// This fucntion is more secure than the 
+function followUser(UserID, Username) {
+  return new Promise(async (resolve, reject) => {
+    if (await checkUserExists("Username", Username) == false) {
+      reject("No user with that username exists");
+      return;
+    }
+
+    let FollowedUserID = await getUserID("Username", Username);
+
+    if (FollowedUserID == UserID) {
+      reject("You can't follow yourself");
+      return;
+    }
+
+    db.query(
+      "INSERT INTO follows (FollowingUserID, FollowedUserID) VALUES (?, ?)",
+      [UserID, FollowedUserID],
+      (err, rows) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve("User followed");
+      }
+    );
+  });
+}
+
 module.exports = {
-  getHighscores,
+  getGlobalHighscores,
+  getPersonalHighscores,
   addHighscore,
   registerUser,
   authenticateUser,
@@ -469,4 +518,5 @@ module.exports = {
   deleteUser,
   forgottenPassword,
   resetPassword,
+  followUser,
 };
