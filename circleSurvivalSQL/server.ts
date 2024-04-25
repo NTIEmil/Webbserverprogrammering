@@ -50,6 +50,18 @@ app.get("/scores/personal", (req, res) => {
     });
 });
 
+app.get("/scores/following", (req, res) => {
+  database
+    .getFollowingHighscore(req.session.userID)
+    .then((rows) => {
+      console.log(rows);
+      res.send(rows);
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+})
+
 app.post("/scores", (req, res) => {
   let HighScore = req.body.HighScore;
   console.log("New highscore: " + HighScore);
@@ -283,6 +295,36 @@ app.post("/auth/follow", async (req, res) => {
 
   database
     .followUser(req.session.userID, name)
+    .then((message) => {
+      console.log(message);
+      res.redirect("/account");
+    })
+    .catch((errorMessage) => {
+      console.log(errorMessage);
+      res.redirect("/account?message=" + encodeURIComponent(errorMessage));
+    });
+});
+
+app.get("/auth/following", (req, res) => {
+  database
+    .getFollowing(req.session.userID)
+    .then((rows) => {
+      console.log(rows);
+      res.send(rows);
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+});
+
+app.post("/auth/unfollow", async (req, res) => {
+  let { name } = req.body;
+
+  console.log("Unfollowing: " + name);
+  console.log("Follower: " + req.session.userID);
+
+  database
+    .unfollowUser(req.session.userID, name)
     .then((message) => {
       console.log(message);
       res.redirect("/account");

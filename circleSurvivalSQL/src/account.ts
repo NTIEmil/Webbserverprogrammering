@@ -9,6 +9,7 @@ window.onload = function () {
   )! as HTMLInputElement;
   let messageElement = document.querySelector<HTMLElement>(".alert-danger")!;
   let followName = document.getElementById("name-flw")! as HTMLInputElement;
+  let followingList = document.getElementById("following-list")!;
 
   const urlParams = new URLSearchParams(window.location.search);
   const errorMessage = urlParams.get("message");
@@ -20,6 +21,45 @@ window.onload = function () {
       let userInfo = data;
       name.placeholder = userInfo[0].name;
       email.placeholder = userInfo[0].email;
+    })
+    .catch((error) => console.error("Error:", error));
+
+  fetch("/auth/following")
+    .then((response) => response.json())
+    .then((data) => {
+      let following = data;
+
+      followingList.innerHTML = "";
+
+      // @ts-ignore
+      following.forEach((user) => {
+        let listItem = document.createElement("li");
+
+        let nameLabel = document.createElement("label");
+        nameLabel.textContent = user.Name;
+        nameLabel.classList.add("pe-3", "d-inline-block");
+        listItem.appendChild(nameLabel);
+
+        let unfollowButton = document.createElement("button");
+        unfollowButton.textContent = "Unfollow";
+        unfollowButton.classList.add("btn", "btn-danger");
+        unfollowButton.addEventListener("click", () => {
+          fetch("/auth/unfollow", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ name: user.Name }),
+          })
+            .then(() => {
+              window.location.reload();
+            })
+            .catch((error) => console.error("Error:", error));
+        });
+        listItem.appendChild(unfollowButton);
+
+        followingList.appendChild(listItem);
+      });
     })
     .catch((error) => console.error("Error:", error));
 

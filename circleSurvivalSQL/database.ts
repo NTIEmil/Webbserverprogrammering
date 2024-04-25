@@ -74,7 +74,6 @@ function getGlobalHighscores() {
       (err, rows) => {
         if (err) {
           reject(err);
-          return;
         }
         resolve(rows);
       }
@@ -90,7 +89,21 @@ function getPersonalHighscores(UserID) {
       (err, rows) => {
         if (err) {
           reject(err);
-          return;
+        }
+        resolve(rows);
+      }
+    );
+  });
+}
+
+function getFollowingHighscore(UserID) {
+  return new Promise((resolve, reject) => {
+    db.query(
+      "(SELECT highscores.Score, users.Username AS Name FROM highscores JOIN users ON highscores.UserID = users.UserID WHERE users.UserID = ?) UNION (SELECT highscores.Score, users.Username AS Name FROM highscores JOIN users ON highscores.UserID = users.UserID WHERE users.UserID IN (SELECT FollowedUserID FROM follows WHERE FollowingUserID = ?))",
+      [UserID, UserID],
+      (err, rows) => {
+        if (err) {
+          reject(err);
         }
         resolve(rows);
       }
@@ -393,6 +406,18 @@ function deleteUser(UserID) {
         }
       }
     );
+    db.query(
+      "DELETE FROM follows WHERE FollowingUserID = ? OR FollowedUserID = ?",
+      [UserID, UserID],
+      (err, result) => {
+        if (err) {
+          console.log(err);
+          reject(err);
+        } else {
+          console.log("User follows deleted");
+        }
+      }
+    );
     resolve("User deleted");
   });
 }
@@ -476,10 +501,10 @@ function resetPassword(token, Password, PasswordConfirm) {
   });
 }
 
-// This fucntion is more secure than the 
+// This fucntion is more secure than the
 function followUser(UserID, Username) {
   return new Promise(async (resolve, reject) => {
-    if (await checkUserExists("Username", Username) == false) {
+    if ((await checkUserExists("Username", Username)) == false) {
       reject("No user with that username exists");
       return;
     }
@@ -505,9 +530,46 @@ function followUser(UserID, Username) {
   });
 }
 
+function getFollowing(UserID) {
+  return new Promise((resolve, reject) => {
+    db.query(
+      "SELECT users.Username as Name FROM follows JOIN users ON follows.FollowedUserID = users.UserID WHERE follows.FollowingUserID = ?",
+      [UserID],
+      (err, rows) => {
+        if (err) {
+          reject(err);
+        }
+        resolve(rows);
+      }
+    );
+  });
+}
+
+function unfollowUser(UserID, Username) {
+  return new Promise(async (resolve, reject) => {
+    if ((await checkUserExists("Username", Username)) == false) {
+      reject("No user with that username exists");
+    }
+
+    let FollowedUserID = await getUserID("Username", Username);
+
+    db.query(
+      "DELETE FROM follows WHERE FollowingUserID = ? AND FollowedUserID = ?",
+      [UserID, FollowedUserID],
+      (err, rows) => {
+        if (err) {
+          reject(err);
+        }
+        resolve("User unfollowed");
+      }
+    );
+  });
+}
+
 module.exports = {
   getGlobalHighscores,
   getPersonalHighscores,
+  getFollowingHighscore,
   addHighscore,
   registerUser,
   authenticateUser,
@@ -519,4 +581,6 @@ module.exports = {
   forgottenPassword,
   resetPassword,
   followUser,
+  getFollowing,
+  unfollowUser,
 };
