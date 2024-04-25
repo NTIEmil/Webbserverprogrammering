@@ -2,7 +2,7 @@ const nodemailer = require("nodemailer");
 
 const dotenv = require("dotenv");
 
-dotenv.config({ path: "./.env" });
+dotenv.config({path: "../../circleSurvivalSQLDotEnv/.env"});
 
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
