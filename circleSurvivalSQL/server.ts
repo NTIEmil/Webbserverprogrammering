@@ -8,6 +8,11 @@ const session = require("express-session");
 
 const database = require("./database.ts");
 
+
+// ##############################################################
+//                 Setting up the server
+// ##############################################################
+
 const publicDir = path.join(__dirname, "./dist");
 
 app.use(
@@ -26,62 +31,13 @@ app.use(
 app.use(express.urlencoded({ extended: "false" }));
 app.use(express.json());
 
-app.get("/scores/global", (req, res) => {
-  database
-    .getGlobalHighscores()
-    .then((rows) => {
-      console.log(rows);
-      res.send(rows);
-    })
-    .catch((err) => {
-      console.log(err);
-    });
-});
-
-app.get("/scores/personal", (req, res) => {
-  database
-    .getPersonalHighscores(req.session.userID)
-    .then((rows) => {
-      console.log(rows);
-      res.send(rows);
-    })
-    .catch((err) => {
-      console.log(err);
-    });
-});
-
-app.get("/scores/following", (req, res) => {
-  database
-    .getFollowingHighscore(req.session.userID)
-    .then((rows) => {
-      console.log(rows);
-      res.send(rows);
-    })
-    .catch((err) => {
-      console.log(err);
-    });
-})
-
-app.post("/scores", (req, res) => {
-  let HighScore = req.body.HighScore;
-  console.log("New highscore: " + HighScore);
-  console.log("Posting userID: " + req.session.userID);
-  database.addHighscore(req.session.userID, HighScore);
-});
-
-app.get("/auth/info", (req, res) => {
-  database
-    .getUserInfo(req.session.userID)
-    .then((rows) => {
-      console.log(rows);
-      res.send(rows);
-    })
-    .catch((err) => {
-      console.log(err);
-    });
-});
+// ##############################################################
+//                 Page navigation
+// ##############################################################
 
 // The pages that the user can visit
+
+// Pages you can visit without being logged in:
 
 app.get("/register", (req, res) => {
   res.sendFile(path.join(__dirname, "dist/register.html"));
@@ -91,26 +47,34 @@ app.get("/login", (req, res) => {
   res.sendFile(path.join(__dirname, "dist/login.html"));
 });
 
+app.get("/forgottenPassword", (req, res) => {
+  res.sendFile(path.join(__dirname, "dist/forgottenPassword.html"));
+});
+
+// I have been directed to the index.html page sometimes when just
+// typing in the URL. This is a fix for that.
 app.get("/index.html", (req, res) => {
   res.redirect("/");
 });
 
+// Pages you can visit when logged in and have a verified email address:
+
+// The home page
 app.get("/", (req, res) => {
   if (req.session.userID) {
     if (!req.session.verified) {
       res.redirect("/verification");
     } else {
       res.sendFile(path.join(__dirname, "dist/index.html"));
-      console.log("UserID connected:" + req.session.userID);
     }
   } else {
     res.redirect("/login");
   }
 });
 
+// The account page
 app.get("/account", (req, res) => {
   if (req.session.userID) {
-    console.log("Account: " + req.session.verified);
     if (!req.session.verified) {
       res.redirect("/verification");
     } else {
@@ -121,8 +85,12 @@ app.get("/account", (req, res) => {
   }
 });
 
+// Pages visited via email links:
+
+// Email varification page
+// This page verifies the user's email address using
+// the token in the URL query parameters
 app.get("/verify", async (req, res) => {
-  console.log("verifying email");
   try {
     // Get the token from the URL query parameters
     let token = req.query.token;
@@ -130,8 +98,6 @@ app.get("/verify", async (req, res) => {
     // Verify the user's email address
     req.session.userID = await database.verifyUser(token);
     req.session.verified = true;
-
-    console.log("Verified userID: " + req.session.userID);
 
     // Redirect the user to the home page
     res.redirect("/");
@@ -144,9 +110,18 @@ app.get("/verify", async (req, res) => {
   }
 });
 
+// Password reset page
+app.get("/resetPassword", (req, res) => {
+  req.session.token = req.query.token;
+
+  res.sendFile(path.join(__dirname, "dist/resetPassword.html"));
+});
+
+// Page you are rediriected to when you have to verify your email:
 app.get("/verification", (req, res) => {
   if (req.session.userID) {
     if (!req.session.verified) {
+      // Send the user a verification email
       database.sendUserVerification(req.session.userID);
       res.sendFile(path.join(__dirname, "dist/verification.html"));
     } else {
@@ -157,71 +132,82 @@ app.get("/verification", (req, res) => {
   }
 });
 
-app.get("/forgottenPassword", (req, res) => {
-  res.sendFile(path.join(__dirname, "dist/forgottenPassword.html"));
+// ##############################################################
+//                 Game-related requests
+// ##############################################################
+
+// Getting the global highscores from the database
+app.get("/scores/global", (req, res) => {
+  database
+    .getGlobalHighscores()
+    .then((rows) => {
+      res.send(rows);
+    })
+    .catch((err) => {
+      console.log(err);
+    });
 });
 
-app.get("/resetPassword", (req, res) => {
-  // Get the token from the URL query parameters
-  req.session.token = req.query.token;
-
-  res.sendFile(path.join(__dirname, "dist/resetPassword.html"));
+// Getting the personal highscores from the database
+app.get("/scores/personal", (req, res) => {
+  database
+    .getPersonalHighscores(req.session.userID)
+    .then((rows) => {
+      res.send(rows);
+    })
+    .catch((err) => {
+      console.log(err);
+    });
 });
 
-app.post("/auth/logout", (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      return res.sendStatus(500);
-    }
-
-    console.log("Logged out");
-
-    res.clearCookie("connect.sid");
-    res.sendStatus(200);
-  });
+// Getting the following highscores from the database
+app.get("/scores/following", (req, res) => {
+  database
+    .getFollowingHighscore(req.session.userID)
+    .then((rows) => {
+      res.send(rows);
+    })
+    .catch((err) => {
+      console.log(err);
+    });
 });
 
-app.post("/auth/deleteAccount", (req, res) => {
-  database.deleteUser(req.session.userID);
-
-  req.session.destroy((err) => {
-    if (err) {
-      return res.sendStatus(500);
-    }
-
-    res.clearCookie("connect.sid");
-
-    res.sendStatus(200);
-  });
+// Posting the highscore to the database
+app.post("/scores", (req, res) => {
+  let HighScore = req.body.HighScore;
+  database.addHighscore(req.session.userID, HighScore);
 });
 
-// Tar emot poster från registeringsformuläret
-// Kollar att informationen stämmer och skickar tillbaka ett meddelande med resultatet
-// Alla kollar som görs i webbläsaren gjörs även på servern ifall anvndaren skulle gå förbi webbläsarens kollar
+// ##############################################################
+//                 Account-related post requests
+// ##############################################################
+
+// When the user wants to register a new account
 app.post("/auth/register", async (req, res) => {
   let { name, email, password, password_confirm } = req.body;
+  // Tries to register the user in the database
   database
     .registerUser(name, email, password, password_confirm)
     .then((userID) => {
+      // Logs in the user if the registration was successful
       req.session.userID = userID;
-      console.log("Registered userID: " + userID);
+      // Sends the user to verify their email
       res.redirect("/verification");
     })
     .catch((errorMessage) => {
-      console.log(errorMessage);
       res.redirect("/register?message=" + encodeURIComponent(errorMessage));
     });
 });
 
-// Tar emot poster från loginsidan
-// Meddelandet som skciaks tillbaka om någonting är fel säger itne längre vad som är fel
-// Detta för att inte ge bort information om en sådan användare finns eller inte
+// When the user wants to log in
 app.post("/auth/login", (req, res) => {
   let { name, password } = req.body;
+  // Tries to authenticate the user
   database
     .authenticateUser(name, password)
     .then((result) => {
-      console.log("Logged in userID: " + result.userID);
+      // Logs in the user if the authentication was successful
+      // and stores if the user has verified their email
       req.session.userID = result.userID;
       req.session.verified = result.verified;
       if (!req.session.verified) {
@@ -236,24 +222,52 @@ app.post("/auth/login", (req, res) => {
     });
 });
 
+// When the user wants to update their account information
 app.post("/auth/account", async (req, res) => {
   let { name, email, password, password_confirm } = req.body;
-  console.log("Updating account" + name, email, password, password_confirm);
+  // Tries to update the user's information in the database
   database
     .updateUser(req.session.userID, name, email, password, password_confirm)
     .then((message) => {
-      console.log(message);
       res.redirect("/account");
     })
     .catch((errorMessage) => {
-      console.log(errorMessage);
       res.redirect("/account?message=" + encodeURIComponent(errorMessage));
     });
 });
 
+// When the user wants to log out
+app.post("/auth/logout", (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.sendStatus(500);
+    }
+
+    res.clearCookie("connect.sid");
+    res.sendStatus(200);
+  });
+});
+
+// When the user wants to delete their account
+app.post("/auth/deleteAccount", (req, res) => {
+  // Deletes the user from the database
+  database.deleteUser(req.session.userID);
+
+  // Logs out the user
+  req.session.destroy((err) => {
+    if (err) {
+      return res.sendStatus(500);
+    }
+
+    res.clearCookie("connect.sid");
+    res.sendStatus(200);
+  });
+});
+
+// When the user wants to send a password reset email
 app.post("/auth/forgottenPassword", async (req, res) => {
   let { email } = req.body;
-  console.log("Forgotten password: " + email);
+  // Sends the user a password reset email
   database
     .forgottenPassword(email)
     .then((message) => {
@@ -268,44 +282,78 @@ app.post("/auth/forgottenPassword", async (req, res) => {
     });
 });
 
+// When the user wants to reset their password
+// using the link from the password reset email
 app.post("/auth/resetPassword", async (req, res) => {
   let { password, password_confirm } = req.body;
-  console.log("Reset password: " + password);
+  // Resets the user's password in the database
   database
     .resetPassword(req.session.token, password, password_confirm)
     .then((result) => {
-      console.log("Reset password userID: " + result.userID);
+      // Logs in the user if the password reset was successful
+      // and stores if the user has verified their email
       req.session.userID = result.userID;
       req.session.verified = result.verified;
       res.redirect("/");
     })
     .catch((errorMessage) => {
-      console.log(errorMessage);
       res.redirect(
         "/resetPassword?message=" + encodeURIComponent(errorMessage)
       );
     });
 });
 
+// When the user wants to follow another user
 app.post("/auth/follow", async (req, res) => {
   let { name } = req.body;
 
-  console.log("Following: " + name);
-  console.log("Follower: " + req.session.userID);
-
+  // Tries to follow the user using the database
   database
     .followUser(req.session.userID, name)
     .then((message) => {
-      console.log(message);
       res.redirect("/account");
     })
     .catch((errorMessage) => {
-      console.log(errorMessage);
       res.redirect("/account?message=" + encodeURIComponent(errorMessage));
     });
 });
 
+// When the user wants to unfollow another user
+app.post("/auth/unfollow", async (req, res) => {
+  let { name } = req.body;
+
+  // Tries to unfollow the user using the database
+  database
+    .unfollowUser(req.session.userID, name)
+    .then((message) => {
+      res.redirect("/account");
+    })
+    .catch((errorMessage) => {
+      res.redirect("/account?message=" + encodeURIComponent(errorMessage));
+    });
+});
+
+// ##############################################################
+//                 Account-related get requests
+// ##############################################################
+
+// When the user wants to get their account information
+app.get("/auth/info", (req, res) => {
+  // Gets the user's information from the database
+  database
+    .getUserInfo(req.session.userID)
+    .then((rows) => {
+      console.log(rows);
+      res.send(rows);
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+});
+
+// When the user wants to get the users they are following
 app.get("/auth/following", (req, res) => {
+  // Gets the users the user is following from the database
   database
     .getFollowing(req.session.userID)
     .then((rows) => {
@@ -317,26 +365,14 @@ app.get("/auth/following", (req, res) => {
     });
 });
 
-app.post("/auth/unfollow", async (req, res) => {
-  let { name } = req.body;
+// ##############################################################
+//                    Initiating the server
+// ##############################################################
 
-  console.log("Unfollowing: " + name);
-  console.log("Follower: " + req.session.userID);
-
-  database
-    .unfollowUser(req.session.userID, name)
-    .then((message) => {
-      console.log(message);
-      res.redirect("/account");
-    })
-    .catch((errorMessage) => {
-      console.log(errorMessage);
-      res.redirect("/account?message=" + encodeURIComponent(errorMessage));
-    });
-});
-
+// Needs to be at the end of the file for all posts and gets to work
 app.use(express.static(publicDir));
 
+// Informs that the server is up and running
 http.listen(3000, () => {
-  console.log("Servern körs, besök http://localhost:3000");
+  console.log("Server is running, visit http://localhost:3000");
 });

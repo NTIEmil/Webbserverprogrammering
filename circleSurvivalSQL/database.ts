@@ -86,7 +86,7 @@ function getGlobalHighscores() {
 function getPersonalHighscores(UserID) {
   return new Promise((resolve, reject) => {
     db.query(
-      "SELECT MAX(highscores.Score) AS MaxScore, users.Username AS Name FROM highscores JOIN users ON highscores.UserID = users.UserID WHERE users.UserID = ? GROUP BY users.UserID",
+      "SELECT MAX(highscores.Score) AS Score, users.Username AS Name FROM highscores JOIN users ON highscores.UserID = users.UserID WHERE users.UserID = ? GROUP BY users.UserID",
       [UserID],
       (err, rows) => {
         if (err) {
@@ -166,10 +166,10 @@ function registerUser(Username, EmailAdress, Password, PasswordConfirm) {
   return new Promise(async (resolve, reject) => {
     // Kollar om det redan finns en användare med samma namn
     if (await checkUserExists("Username", Username)) {
-      reject("This username is already in use");
+      reject("Username or email adress already in use");
       // Kollar om det redan finns en användare med samma e-postadress
     } else if (await checkUserExists("EmailAdress", EmailAdress)) {
-      reject("This email address is already in use");
+      reject("Username or email adress is already in use");
       // Kollar om användarnamnet innehåller tomma tecken
     } else if (nameRegex.test(Username) == true) {
       reject("The username can't contain whitespace characters");
