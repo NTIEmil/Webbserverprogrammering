@@ -10,7 +10,7 @@ const database = require("./database.ts");
 
 
 // ##############################################################
-//                 Setting up the server
+// ################# Setting up the server ######################
 // ##############################################################
 
 const publicDir = path.join(__dirname, "./dist");
@@ -32,7 +32,7 @@ app.use(express.urlencoded({ extended: "false" }));
 app.use(express.json());
 
 // ##############################################################
-//                 Page navigation
+// ###################  Page navigation #########################
 // ##############################################################
 
 // The pages that the user can visit
@@ -133,7 +133,7 @@ app.get("/verification", (req, res) => {
 });
 
 // ##############################################################
-//                 Game-related requests
+// ################# Game-related requests ######################
 // ##############################################################
 
 // Getting the global highscores from the database
@@ -145,6 +145,7 @@ app.get("/scores/global", (req, res) => {
     })
     .catch((err) => {
       console.log(err);
+      res.send("Serer error");
     });
 });
 
@@ -157,6 +158,7 @@ app.get("/scores/personal", (req, res) => {
     })
     .catch((err) => {
       console.log(err);
+      res.send("Serer error");
     });
 });
 
@@ -169,6 +171,7 @@ app.get("/scores/following", (req, res) => {
     })
     .catch((err) => {
       console.log(err);
+      res.send("Serer error");
     });
 });
 
@@ -179,7 +182,7 @@ app.post("/scores", (req, res) => {
 });
 
 // ##############################################################
-//                 Account-related post requests
+// ############# Account-related post requests ##################
 // ##############################################################
 
 // When the user wants to register a new account
@@ -195,6 +198,7 @@ app.post("/auth/register", async (req, res) => {
       res.redirect("/verification");
     })
     .catch((errorMessage) => {
+      console.log(errorMessage);
       res.redirect("/register?message=" + encodeURIComponent(errorMessage));
     });
 });
@@ -232,6 +236,7 @@ app.post("/auth/account", async (req, res) => {
       res.redirect("/account");
     })
     .catch((errorMessage) => {
+      console.log(errorMessage);
       res.redirect("/account?message=" + encodeURIComponent(errorMessage));
     });
 });
@@ -271,7 +276,6 @@ app.post("/auth/forgottenPassword", async (req, res) => {
   database
     .forgottenPassword(email)
     .then((message) => {
-      console.log(message);
       res.redirect("/forgottenPassword");
     })
     .catch((errorMessage) => {
@@ -297,6 +301,7 @@ app.post("/auth/resetPassword", async (req, res) => {
       res.redirect("/");
     })
     .catch((errorMessage) => {
+      console.log(errorMessage);
       res.redirect(
         "/resetPassword?message=" + encodeURIComponent(errorMessage)
       );
@@ -314,6 +319,7 @@ app.post("/auth/follow", async (req, res) => {
       res.redirect("/account");
     })
     .catch((errorMessage) => {
+      console.log(errorMessage);
       res.redirect("/account?message=" + encodeURIComponent(errorMessage));
     });
 });
@@ -329,12 +335,13 @@ app.post("/auth/unfollow", async (req, res) => {
       res.redirect("/account");
     })
     .catch((errorMessage) => {
+      console.log(errorMessage);
       res.redirect("/account?message=" + encodeURIComponent(errorMessage));
     });
 });
 
 // ##############################################################
-//                 Account-related get requests
+// ############## Account-related get requests ##################
 // ##############################################################
 
 // When the user wants to get their account information
@@ -343,7 +350,6 @@ app.get("/auth/info", (req, res) => {
   database
     .getUserInfo(req.session.userID)
     .then((rows) => {
-      console.log(rows);
       res.send(rows);
     })
     .catch((err) => {
@@ -357,7 +363,6 @@ app.get("/auth/following", (req, res) => {
   database
     .getFollowing(req.session.userID)
     .then((rows) => {
-      console.log(rows);
       res.send(rows);
     })
     .catch((err) => {
@@ -366,7 +371,7 @@ app.get("/auth/following", (req, res) => {
 });
 
 // ##############################################################
-//                    Initiating the server
+// ###################  Hosting the server ######################
 // ##############################################################
 
 // Needs to be at the end of the file for all posts and gets to work

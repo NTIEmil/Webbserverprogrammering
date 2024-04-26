@@ -19,9 +19,9 @@ window.onload = function () {
     document
         .getElementById("submit-button")
         .addEventListener("click", function (event) {
-        if (name.value == "" || password.value == "") {
+        if (!name.value || !password.value) {
             event.preventDefault();
-            messageElement.textContent = "Fyll i alla fält";
+            messageElement.textContent = "Fill in all fields";
             messageElement.style.display = "block";
         }
     });

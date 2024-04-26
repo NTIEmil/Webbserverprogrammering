@@ -4,25 +4,46 @@ const jwt = require("jsonwebtoken");
 
 const emailSender = require("./emailSender.ts");
 
-// Regex för att validera e-postadresser och lösenord
+// Regex to check if the email adress is in a valid format
 const emailRegex = new RegExp(
   /^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i
 );
+
+// Regex to check if the password is secure enough
 const passwordRegex = new RegExp(
   /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/
 );
 
+// Regex to check if the name contains whitespace characters
 const nameRegex = new RegExp(/\s/);
 
+// #########################################################
+// ################# Database connection ###################
+// #########################################################
+
+// Database credentials
 const db = mysql.createConnection({
-  // värden hämtas från .env
   host: process.env.DATABASE_HOST,
   user: process.env.DATABASE_USER,
   password: process.env.DATABASE_PASSWORD,
   database: process.env.DATABASE,
 });
 
-// Funktion för att kolla om användaren redan finns i databasen
+// Connect to the database
+db.connect((error) => {
+  if (error) {
+    console.log(error);
+  } else {
+    console.log("Connected to MySQL");
+  }
+});
+
+// #########################################################
+// ######### Internaly used database functions #############
+// #########################################################
+
+// Checks if a user exists in the database
+// Takes in a column and value to check for
 async function checkUserExists(column, value) {
   return new Promise((resolve, reject) => {
     db.query(
@@ -39,6 +60,7 @@ async function checkUserExists(column, value) {
   });
 }
 
+// Hashes a password
 async function hashPassword(password) {
   return new Promise((resolve, reject) => {
     bcrypt.hash(password, 10, function (err, hash) {
@@ -51,6 +73,44 @@ async function hashPassword(password) {
   });
 }
 
+// Gets the UserID from the database
+// Takes in an attribute and a value to search for
+function getUserID(attribute, value) {
+  return new Promise((resolve, reject) => {
+    db.query(
+      "SELECT UserID FROM users WHERE ?? = ?",
+      [attribute, value],
+      (err, result) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(result[0].UserID);
+        }
+      }
+    );
+  });
+}
+
+// Adds an account to the database
+function addAccountToDB(Username, EmailAdress, Password) {
+  return new Promise((resolve, reject) => {
+    bcrypt.hash(Password, 10, function (err, hash) {
+      db.query(
+        "INSERT INTO users SET?",
+        { Username: Username, EmailAdress: EmailAdress, Password: hash },
+        (err, result) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve("User registered");
+          }
+        }
+      );
+    });
+  });
+}
+
+// Generates a JWT token for a user
 function generateTokenForUser(EmailAdress) {
   let payload = { EmailAdress: EmailAdress };
 
@@ -61,14 +121,12 @@ function generateTokenForUser(EmailAdress) {
   return token;
 }
 
-db.connect((error) => {
-  if (error) {
-    console.log(error);
-  } else {
-    console.log("Ansluten till MySQL");
-  }
-});
+// #########################################################
+// ############# Exported database functions ###############
+// #########################################################
 
+// Gets an array of the global highscores
+// Returns the highest score for each user
 function getGlobalHighscores() {
   return new Promise((resolve, reject) => {
     db.query(
@@ -83,6 +141,7 @@ function getGlobalHighscores() {
   });
 }
 
+// Gets an array of the personal highscores for a user
 function getPersonalHighscores(UserID) {
   return new Promise((resolve, reject) => {
     db.query(
@@ -98,6 +157,8 @@ function getPersonalHighscores(UserID) {
   });
 }
 
+// Gets an array of the highscores for a user and the users they follow
+// Returns the highest score for each user
 function getFollowingHighscore(UserID) {
   return new Promise((resolve, reject) => {
     db.query(
@@ -113,75 +174,38 @@ function getFollowingHighscore(UserID) {
   });
 }
 
+// Adds a highscore to the database
 function addHighscore(UserID, Score) {
   db.query(
     "INSERT INTO highscores (UserID, Score) VALUES (?, ?)",
     [UserID, Score],
     (err, rows) => {
       if (err) throw err;
-      // console.log(rows);
     }
   );
 }
 
-function getUserID(attribute, value) {
-  return new Promise((resolve, reject) => {
-    db.query(
-      "SELECT UserID FROM users WHERE ?? = ?",
-      [attribute, value],
-      (err, result) => {
-        if (err) {
-          console.log(err);
-          reject(err);
-        } else {
-          console.log("UserID found: " + result[0].UserID);
-          resolve(result[0].UserID);
-        }
-      }
-    );
-  });
-}
-
-function addAccountToDB(Username, EmailAdress, Password) {
-  return new Promise((resolve, reject) => {
-    bcrypt.hash(Password, 10, function (err, hash) {
-      db.query(
-        "INSERT INTO users SET?",
-        { Username: Username, EmailAdress: EmailAdress, Password: hash },
-        (err, result) => {
-          if (err) {
-            console.log(err);
-            reject(err);
-          } else {
-            console.log("User registered");
-            resolve("User registered");
-          }
-        }
-      );
-    });
-  });
-}
-
+// When a user tries to register a new account
 function registerUser(Username, EmailAdress, Password, PasswordConfirm) {
   return new Promise(async (resolve, reject) => {
-    // Kollar om det redan finns en användare med samma namn
+    // Check if the username is already in use
     if (await checkUserExists("Username", Username)) {
       reject("Username or email adress already in use");
-      // Kollar om det redan finns en användare med samma e-postadress
+      // Check if the email adress is already in use
     } else if (await checkUserExists("EmailAdress", EmailAdress)) {
       reject("Username or email adress is already in use");
-      // Kollar om användarnamnet innehåller tomma tecken
+      // Checks if the username contains whitespace characters
     } else if (nameRegex.test(Username) == true) {
       reject("The username can't contain whitespace characters");
-      // Kollar om e-postadressen är i korrekt format
+      // Checks if the email adress is in a valid format
     } else if (emailRegex.test(EmailAdress) == false) {
       reject("Invalid email address");
-      // Kollar om lösenordet är tillräckligt säkert
+      // Checks if the password is secure enough
     } else if (passwordRegex.test(Password) == false) {
       reject(
         "The password needs to be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number and one special character"
       );
-      // Kollar om lösenorden matchar
+      // Checks if the passwords match
     } else if (Password !== PasswordConfirm) {
       reject("The passwords do not match");
     } else {
@@ -191,6 +215,7 @@ function registerUser(Username, EmailAdress, Password, PasswordConfirm) {
   });
 }
 
+// When a user tries to log in
 function authenticateUser(Username, Password) {
   return new Promise((resolve, reject) => {
     db.query(
@@ -198,7 +223,6 @@ function authenticateUser(Username, Password) {
       [Username],
       async (error, result) => {
         if (error) {
-          console.log(error);
           reject("An error occurred");
         }
         // If result.length == 0, the user does not exist
@@ -211,8 +235,6 @@ function authenticateUser(Username, Password) {
             result[0].Password,
             function (err, passwordResult) {
               if (passwordResult) {
-                console.log("User logged in");
-
                 let response = {
                   userID: result[0].UserID,
                   verified: result[0].Verified,
@@ -230,82 +252,93 @@ function authenticateUser(Username, Password) {
   });
 }
 
+// When a user tries to update their account information
 function updateUser(UserID, Username, EmailAdress, Password, PasswordConfirm) {
-  console.log(UserID, Username, EmailAdress, Password, PasswordConfirm);
-
   return new Promise(async (resolve, reject) => {
     let query = "UPDATE users SET ";
     let params = [];
 
-    /* Kollar om ett fält är ifyllt */
-    if (
-      Username != "" ||
-      EmailAdress != "" ||
-      Password != "" ||
-      PasswordConfirm != ""
-    ) {
-      /* Om lösenordet ska ändras */
-      if (Password != "" || PasswordConfirm != "") {
-        /* Bara ett lösenordsfält är ifyllt */
+    // Checks if any of the fields are filled in
+    if (Username || EmailAdress || Password || PasswordConfirm) {
+      // If the user tries to change their password
+      if (Password || PasswordConfirm) {
+        // If both password fields are not filled in
         if (Password == "" || PasswordConfirm == "") {
           reject("Fill in both password fields to change password");
-          /* Kollar om lösenordet är tillräckligt säkert */
+          // Checks if the password is secure enough
         } else if (passwordRegex.test(Password) == false) {
           reject(
             "The password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number and one special character"
           );
-          /* Kollar om lösenorden matchar */
+          // Checks if the passwords match
         } else if (Password != PasswordConfirm) {
           reject("The passwords do not match");
         } else {
+          // Adds the password to the query
           query += "Password = ?, ";
+          // Hash the password
           await hashPassword(Password)
             .then((hash) => {
               Password = hash;
             })
             .catch((err) => console.error(err));
+          // Adds the password to the parameters
           // @ts-ignore
           params.push(Password);
         }
       }
-      if (EmailAdress != "") {
-        /* Kollar om e-postadressen är i korrekt format */
+      // If the user tries to change their email adress
+      if (EmailAdress) {
+        // Checks if the email adress is in a valid format
         if (emailRegex.test(EmailAdress) == false) {
           reject("Invalid email address");
+          // Checks if the email adress is already in use
         } else if (await checkUserExists("EmailAdress", EmailAdress)) {
           reject("This email address is already in use");
         } else {
+          // Adds the email adress to the query
           query += "EmailAdress = ?, ";
+          // Adds the email adress to the parameters
           // @ts-ignore
           params.push(EmailAdress);
         }
       }
-      if (Username != "") {
-        if (await checkUserExists("EmailAdress", EmailAdress)) {
-          reject("This email address is already in use");
+      // If the user tries to change their username
+      if (Username) {
+        // Checks if the username contains whitespace characters
+        if (nameRegex.test(Username) == true) {
+          reject("The username can't contain whitespace characters");
+          // Checks if the username is already in use
+        } else if (await checkUserExists("Username", Username)) {
+          reject("This username is already in use");
         } else {
+          // Adds the username to the query
           query += "Username = ?, ";
+          // Adds the username to the parameters
           // @ts-ignore
           params.push(Username);
         }
       }
     } else {
+      // If none of the fields are filled in
       reject("Fill in a field to change information");
     }
 
     // Remove the last comma and space
     query = query.slice(0, -2);
 
+    // Adds the WHERE clause to the query
     query += " WHERE UserID = ?";
+
+    // Adds the UserID to the parameters
     // @ts-ignore
     params.push(UserID);
 
+    // Update the user's record in the database
     db.query(query, params, (err, result) => {
       if (err) {
-        console.log(err);
         reject(err);
       } else {
-        console.log("Success");
         resolve("User updated");
       }
     });

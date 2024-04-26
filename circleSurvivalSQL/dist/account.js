@@ -70,18 +70,18 @@ window.onload = function () {
         .addEventListener("click", (event) => {
         let inputError = false;
         /* Kollar om ett fält är ifyllt */
-        if (name.value != "" ||
-            email.value != "" ||
-            password.value != "" ||
-            passwordConfirm.value != "") {
+        if (name.value ||
+            email.value ||
+            password.value ||
+            passwordConfirm.value) {
             if (name_Regex.test(name.value) == true) {
                 messageElement.textContent = "Name can't contain whitespace characters";
                 inputError = true;
             }
             /* Om lösenordet ska ändras */
-            else if (password.value != "" || passwordConfirm.value != "") {
+            else if (password.value || passwordConfirm.value) {
                 /* Bara ett lösenordsfält är ifyllt */
-                if (password.value == "" || passwordConfirm.value == "") {
+                if (!password.value || !passwordConfirm.value) {
                     messageElement.textContent =
                         "Fill in both password fields to change password";
                     inputError = true;
@@ -98,7 +98,7 @@ window.onload = function () {
                     inputError = true;
                 }
             }
-            else if (email.value != "") {
+            else if (email.value) {
                 /* Kollar om e-postadressen är i korrekt format */
                 if (email_Regex.test(email.value) == false) {
                     messageElement.textContent = "Invalid email address";
@@ -120,7 +120,7 @@ window.onload = function () {
         .getElementById("follow-button")
         .addEventListener("click", (event) => {
         let inputError = false;
-        if (followName.value == "") {
+        if (!followName.value) {
             messageElement.textContent =
                 "Fill in the username of whom you want to follow";
             inputError = true;
