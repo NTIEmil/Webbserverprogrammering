@@ -75,6 +75,8 @@ window.onload = function () {
     /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/
   );
 
+  const name_Regex = new RegExp(/\s/)
+
   /* Döljer varnignsmeddelandet om det är tomt */
   if (messageElement.textContent == "") {
     messageElement.style.display = "none";
@@ -93,8 +95,12 @@ window.onload = function () {
         password.value != "" ||
         passwordConfirm.value != ""
       ) {
+        if (name_Regex.test(name.value) == true) {
+          messageElement.textContent = "Name can't contain whitespace characters";
+          inputError = true;
+        }
         /* Om lösenordet ska ändras */
-        if (password.value != "" || passwordConfirm.value != "") {
+        else if (password.value != "" || passwordConfirm.value != "") {
           /* Bara ett lösenordsfält är ifyllt */
           if (password.value == "" || passwordConfirm.value == "") {
             messageElement.textContent =
@@ -111,7 +117,7 @@ window.onload = function () {
             inputError = true;
           }
         }
-        if (email.value != "") {
+        else if (email.value != "") {
           /* Kollar om e-postadressen är i korrekt format */
           if (email_Regex.test(email.value) == false) {
             messageElement.textContent = "Invalid email address";

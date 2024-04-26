@@ -12,6 +12,8 @@ const passwordRegex = new RegExp(
   /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/
 );
 
+const nameRegex = new RegExp(/\s/);
+
 const db = mysql.createConnection({
   // värden hämtas från .env
   host: process.env.DATABASE_HOST,
@@ -70,7 +72,7 @@ db.connect((error) => {
 function getGlobalHighscores() {
   return new Promise((resolve, reject) => {
     db.query(
-      "SELECT highscores.Score, users.Username AS Name FROM highscores JOIN users ON highscores.UserID = users.UserID",
+      "SELECT MAX(highscores.Score) AS Score, users.Username AS Name FROM highscores JOIN users ON highscores.UserID = users.UserID GROUP BY users.UserID",
       (err, rows) => {
         if (err) {
           reject(err);
@@ -84,7 +86,7 @@ function getGlobalHighscores() {
 function getPersonalHighscores(UserID) {
   return new Promise((resolve, reject) => {
     db.query(
-      "SELECT highscores.Score, users.Username AS Name FROM highscores JOIN users ON highscores.UserID = users.UserID WHERE users.UserID = ?",
+      "SELECT MAX(highscores.Score) AS MaxScore, users.Username AS Name FROM highscores JOIN users ON highscores.UserID = users.UserID WHERE users.UserID = ? GROUP BY users.UserID",
       [UserID],
       (err, rows) => {
         if (err) {
@@ -168,6 +170,9 @@ function registerUser(Username, EmailAdress, Password, PasswordConfirm) {
       // Kollar om det redan finns en användare med samma e-postadress
     } else if (await checkUserExists("EmailAdress", EmailAdress)) {
       reject("This email address is already in use");
+      // Kollar om användarnamnet innehåller tomma tecken
+    } else if (nameRegex.test(Username) == true) {
+      reject("The username can't contain whitespace characters");
       // Kollar om e-postadressen är i korrekt format
     } else if (emailRegex.test(EmailAdress) == false) {
       reject("Invalid email address");
