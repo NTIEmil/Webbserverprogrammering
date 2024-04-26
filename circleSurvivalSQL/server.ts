@@ -95,7 +95,7 @@ app.get("/verify", async (req, res) => {
     // Get the token from the URL query parameters
     let token = req.query.token;
 
-    // Verify the user's email address
+    // Verify the user's email address and logs them in
     req.session.userID = await database.verifyUser(token);
     req.session.verified = true;
 

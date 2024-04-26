@@ -345,8 +345,8 @@ function updateUser(UserID, Username, EmailAdress, Password, PasswordConfirm) {
   });
 }
 
+// When a user needs their account information
 function getUserInfo(UserID) {
-  console.log(UserID);
   return new Promise((resolve, reject) => {
     db.query(
       "SELECT Username as name, EmailAdress as email FROM users WHERE UserID = ?",
@@ -354,7 +354,6 @@ function getUserInfo(UserID) {
       (err, rows) => {
         if (err) {
           reject(err);
-          return;
         }
         resolve(rows);
       }
@@ -362,39 +361,43 @@ function getUserInfo(UserID) {
   });
 }
 
+// When a user is to be sent a verification email
 function sendUserVerification(UserID) {
   return new Promise(async (resolve, reject) => {
     let user = await getUserInfo(UserID);
 
+    // Generates a token for the user
     // @ts-ignore
     let token = generateTokenForUser(user[0].email);
 
+    // Creates the URL for the user to verify their email adress
     let url = `http://localhost:3000/verify?token=${token}`;
 
+    // Prepares the email's content
     let subject = "Verify your email address";
     let html = `<p>Click <a href="${url}">here</a> to verify your email address</p>`;
 
+    // Sends the email
     emailSender
       // @ts-ignore
       .sendEmail(user[0].email, subject, html)
       .then((result) => {
-        console.log(result);
         resolve("Email sent");
       })
       .catch((err) => {
-        console.log(err);
         reject(err);
       });
   });
 }
 
+// When a user verifies their email adress
 function verifyUser(token) {
   return new Promise(async (resolve, reject) => {
     try {
       // Verify the token
       let payload = jwt.verify(token, process.env.JWT_SECRET);
 
-      // Get the user ID from the payload
+      // Get the email adress from the payload
       let EmailAdress = payload.EmailAdress;
 
       // Update the user's record in the database
@@ -410,25 +413,22 @@ function verifyUser(token) {
           }
         }
       );
+      // Get the user's ID to log them in
       let UserID = await getUserID("EmailAdress", EmailAdress);
-      console.log(UserID);
       resolve(UserID);
     } catch (err) {
-      console.log(err);
       reject(err);
     }
   });
 }
 
+// When a user deletes their account
 function deleteUser(UserID) {
   return new Promise((resolve, reject) => {
     // Delete the user's account
     db.query("DELETE FROM users WHERE UserID = ?", [UserID], (err, result) => {
       if (err) {
-        console.log(err);
         reject(err);
-      } else {
-        console.log("User account deleted");
       }
     });
     // Delete the user's highscores
@@ -437,22 +437,17 @@ function deleteUser(UserID) {
       [UserID],
       (err, result) => {
         if (err) {
-          console.log(err);
           reject(err);
-        } else {
-          console.log("User highscores deleted");
         }
       }
     );
+    // Delete the user's follows, both as a follower and as a followed user
     db.query(
       "DELETE FROM follows WHERE FollowingUserID = ? OR FollowedUserID = ?",
       [UserID, UserID],
       (err, result) => {
         if (err) {
-          console.log(err);
           reject(err);
-        } else {
-          console.log("User follows deleted");
         }
       }
     );
@@ -460,26 +455,30 @@ function deleteUser(UserID) {
   });
 }
 
+// When a user has forgotten their password
 function forgottenPassword(EmailAdress) {
   return new Promise(async (resolve, reject) => {
+    // Check if the user exists
     let userExists = await checkUserExists("EmailAdress", EmailAdress);
 
     if (userExists) {
+      // Generate a token for the user
       let token = generateTokenForUser(EmailAdress);
 
+      // Create the URL for the user to reset their password
       let url = `http://localhost:3000/resetPassword?token=${token}`;
 
+      // Prepare the email's content
       let subject = "Reset your password";
       let html = `<p>Click <a href="${url}">here</a> to reset your password</p>`;
 
+      // Send the email
       emailSender
         .sendEmail(EmailAdress, subject, html)
         .then((result) => {
-          console.log(result);
           resolve("Email sent");
         })
         .catch((err) => {
-          console.log(err);
           reject(err);
         });
     } else {
@@ -488,6 +487,7 @@ function forgottenPassword(EmailAdress) {
   });
 }
 
+// When a user resets their password
 function resetPassword(token, Password, PasswordConfirm) {
   return new Promise(async (resolve, reject) => {
     try {
@@ -514,11 +514,8 @@ function resetPassword(token, Password, PasswordConfirm) {
             [hash, EmailAdress],
             (err, result) => {
               if (err) {
-                console.log(err);
                 reject(err);
               } else {
-                console.log("Password reset");
-
                 // Sends back the UserID and that the account is verified
                 // This is more secure than just setting it to varified the main server-file
                 let response = {
@@ -533,34 +530,47 @@ function resetPassword(token, Password, PasswordConfirm) {
         });
       }
     } catch (err) {
-      console.log(err);
       reject(err);
     }
   });
 }
 
-// This fucntion is more secure than the
+// When a user tries to follow another user
 function followUser(UserID, Username) {
   return new Promise(async (resolve, reject) => {
+    // Check if the user exists
     if ((await checkUserExists("Username", Username)) == false) {
       reject("No user with that username exists");
-      return;
     }
 
+    // Get the UserID of the user to follow
     let FollowedUserID = await getUserID("Username", Username);
 
+    // Check if the user tries to follow themselves
     if (FollowedUserID == UserID) {
       reject("You can't follow yourself");
-      return;
     }
 
+    // Check if the user already follows the user
+    db.query(
+      "SELECT * FROM follows WHERE FollowingUserID = ? AND FollowedUserID = ?",
+      [UserID, FollowedUserID],
+      (err, rows) => {
+        if (err) {
+          reject(err);
+        } else if (rows.length > 0) {
+          reject("You already follow this user");
+        }
+      }
+    );
+
+    // Follow the user
     db.query(
       "INSERT INTO follows (FollowingUserID, FollowedUserID) VALUES (?, ?)",
       [UserID, FollowedUserID],
       (err, rows) => {
         if (err) {
           reject(err);
-          return;
         }
         resolve("User followed");
       }
@@ -568,6 +578,7 @@ function followUser(UserID, Username) {
   });
 }
 
+// When a user needs to get the users they follow
 function getFollowing(UserID) {
   return new Promise((resolve, reject) => {
     db.query(
@@ -583,14 +594,15 @@ function getFollowing(UserID) {
   });
 }
 
+// When a user unfollows another user
+// This is done using generated buttons in the frontend and are only
+// available to the user if they follow the user they want to unfollow
 function unfollowUser(UserID, Username) {
   return new Promise(async (resolve, reject) => {
-    if ((await checkUserExists("Username", Username)) == false) {
-      reject("No user with that username exists");
-    }
-
+    // Get the UserID of the user to unfollow
     let FollowedUserID = await getUserID("Username", Username);
 
+    // Unfollow the user
     db.query(
       "DELETE FROM follows WHERE FollowingUserID = ? AND FollowedUserID = ?",
       [UserID, FollowedUserID],
@@ -604,6 +616,7 @@ function unfollowUser(UserID, Username) {
   });
 }
 
+// Export the functions
 module.exports = {
   getGlobalHighscores,
   getPersonalHighscores,
