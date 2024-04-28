@@ -71,7 +71,7 @@ button:hover {
   margin-bottom: 1rem;
 }
 
-.center-display button {
+.center-display button, .center-display a{
   background-color: rgb(59 130 246);
   color: white;
   width: 100%;
@@ -81,9 +81,11 @@ button:hover {
   -webkit-text-stroke: 0.04rem black;
 }
 
-
-.center-display button.grayButton {
+.center-display a {
   background-color: gray;
+  text-decoration: none;
+  display: inline-block;
+  line-height: 3rem;
   width: 50%;
   margin-bottom: 1rem;
 }

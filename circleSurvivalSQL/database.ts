@@ -145,7 +145,7 @@ function getGlobalHighscores() {
 function getPersonalHighscores(UserID) {
   return new Promise((resolve, reject) => {
     db.query(
-      "SELECT MAX(highscores.Score) AS Score, users.Username AS Name FROM highscores JOIN users ON highscores.UserID = users.UserID WHERE users.UserID = ? GROUP BY users.UserID",
+      "SELECT highscores.Score AS Score, users.Username AS Name FROM highscores JOIN users ON highscores.UserID = users.UserID WHERE users.UserID = ?",
       [UserID],
       (err, rows) => {
         if (err) {
@@ -162,7 +162,7 @@ function getPersonalHighscores(UserID) {
 function getFollowingHighscore(UserID) {
   return new Promise((resolve, reject) => {
     db.query(
-      "(SELECT highscores.Score, users.Username AS Name FROM highscores JOIN users ON highscores.UserID = users.UserID WHERE users.UserID = ?) UNION (SELECT highscores.Score, users.Username AS Name FROM highscores JOIN users ON highscores.UserID = users.UserID WHERE users.UserID IN (SELECT FollowedUserID FROM follows WHERE FollowingUserID = ?))",
+      "(SELECT MAX(highscores.Score) AS Score, users.Username AS Name FROM highscores JOIN users ON highscores.UserID = users.UserID WHERE users.UserID = ? GROUP BY users.UserID) UNION (SELECT MAX(highscores.Score) AS Score, users.Username AS Name FROM highscores JOIN users ON highscores.UserID = users.UserID WHERE users.UserID IN (SELECT FollowedUserID FROM follows WHERE FollowingUserID = ?) GROUP BY users.UserID)",
       [UserID, UserID],
       (err, rows) => {
         if (err) {
@@ -512,14 +512,14 @@ function resetPassword(token, Password, PasswordConfirm) {
           db.query(
             "UPDATE users SET Password = ?, Verified = 1 WHERE EmailAdress = ?",
             [hash, EmailAdress],
-            (err, result) => {
+            async (err, result) => {
               if (err) {
                 reject(err);
               } else {
                 // Sends back the UserID and that the account is verified
                 // This is more secure than just setting it to varified the main server-file
                 let response = {
-                  userID: getUserID("EmailAdress", EmailAdress),
+                  userID: await getUserID("EmailAdress", EmailAdress),
                   verified: 1,
                 };
 
@@ -541,6 +541,7 @@ function followUser(UserID, Username) {
     // Check if the user exists
     if ((await checkUserExists("Username", Username)) == false) {
       reject("No user with that username exists");
+      return;
     }
 
     // Get the UserID of the user to follow
@@ -549,6 +550,7 @@ function followUser(UserID, Username) {
     // Check if the user tries to follow themselves
     if (FollowedUserID == UserID) {
       reject("You can't follow yourself");
+      return;
     }
 
     // Check if the user already follows the user
