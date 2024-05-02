@@ -171,6 +171,12 @@ window.onload = function () {
     });
     // When the user clicks the delete account button
     document.getElementById("deleteButton").addEventListener("click", () => {
+        // Asks the user if they are sure they want to delete their account
+        let confirmation = confirm("Are you sure you want to delete your account?\nEverything associated with your account will be deleted.\nThis action can't be undone.");
+        // Stopps prevents the deletion if the user cancels
+        if (!confirmation) {
+            return;
+        }
         // Deletes the account
         fetch("/auth/deleteAccount", {
             method: "POST",
